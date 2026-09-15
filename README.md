@@ -378,6 +378,9 @@ library(lubridate)
 COLORS <- list(navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6", sky = "#8EC5FC", slate = "#64748B", text = "#334155", white = "#FFFFFF")
 monthly <- demand_final |>
   filter(Scenario == "Base") |>
+  mutate(
+    TahunBulan = as.Date(paste0(TahunBulan, "-01"))
+  ) |>
   group_by(TahunBulan) |>
   summarise(Demand = sum(ScenarioDemand), Capacity = sum(Capacity), .groups = "drop") |>
   arrange(TahunBulan)
