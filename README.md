@@ -193,7 +193,15 @@ library(ggplot2)
 COLORS <- list(navy = "#253B6E", gold = "#F2B134", white = "#FFFFFF", text = "#334155")
 PRODUCT_COLORS <- c("Product A" = "#3F8EFC", "Product B" = "#6C5CE7", "Product C" = "#16B8A6", "Product D" = "#F26B5E")
 
-ggplot(demand_final |> filter(Scenario == "Base"), aes(Produk, ScenarioDemand, fill = Produk)) +
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+visual_data <- demand_final |> filter(Scenario == selected_scenario)
+
+ggplot(visual_data, aes(Produk, ScenarioDemand, fill = Produk)) +
   geom_violin(color = COLORS$white, alpha = .85, trim = FALSE) +
   geom_boxplot(width = .12, fill = COLORS$white, color = COLORS$navy,
                outlier.shape = 21, outlier.fill = COLORS$gold,
@@ -220,8 +228,15 @@ library(dplyr)
 library(ggplot2)
 
 COLORS <- list(navy = "#253B6E", sky = "#8EC5FC", slate = "#64748B", white = "#FFFFFF", text = "#334155")
-seasonality <- demand_final |>
-  filter(Scenario == "Base") |>
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+visual_data <- demand_final |> filter(Scenario == selected_scenario)
+
+seasonality <- visual_data |>
   group_by(Bulan) |>
   summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
   mutate(AverageDemand = mean(Demand), DemandLevel = if_else(Demand >= AverageDemand, "Above Average", "Below Average"))
@@ -252,8 +267,15 @@ library(dplyr)
 library(ggplot2)
 
 COLORS <- list(navy = "#253B6E", aqua = "#16B8A6", white = "#FFFFFF", text = "#334155")
-utilization <- demand_final |>
-  filter(Scenario == "Base") |>
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+visual_data <- demand_final |> filter(Scenario == selected_scenario)
+
+utilization <- visual_data |>
   group_by(Produk, Lokasi) |>
   summarise(Utilization = sum(ScenarioDemand) / sum(Capacity), .groups = "drop")
 
@@ -281,8 +303,15 @@ library(dplyr)
 library(ggplot2)
 
 COLORS <- list(aqua = "#16B8A6", coral = "#F26B5E", navy = "#253B6E", text = "#334155")
-risk <- demand_final |>
-  filter(Scenario == "Base") |>
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+visual_data <- demand_final |> filter(Scenario == selected_scenario)
+
+risk <- visual_data |>
   group_by(SKU) |>
   summarise(Shortage = sum(pmax(-CapacityGap, 0)), .groups = "drop") |>
   arrange(desc(Shortage)) |>
@@ -306,7 +335,42 @@ ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
 
 Mengidentifikasi SKU yang paling berkontribusi terhadap production shortage.
 
-## 6. Demand Forecast
+### Dynamic Scenario Slicer untuk R Visual
+
+Agar visual mengikuti slicer Power BI tetapi tetap default ke `Base`:
+
+1. Tambahkan kolom `Scenario` dari `demand_final` ke **Slicer**.
+2. Pilih hanya `Base` sebagai default selection pada slicer.
+3. Tambahkan field yang dibutuhkan visual R ke bagian **Values**.
+4. Jangan gunakan `filter(Scenario == "Base")` secara hard-coded pada kode visual.
+
+Kode visual menggunakan pola berikut:
+
+```r
+library(dplyr)
+
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+
+visual_data <- demand_final |>
+  filter(Scenario == selected_scenario)
+```
+
+Perilaku visual:
+
+```text
+Slicer = Base          → visual Base
+Slicer = +10%          → visual +10%
+Slicer = +30%          → visual +30%
+Tidak ada filter       → fallback Base
+Multiple scenario      → fallback Base
+```
+
+> Catatan: kode `generate_outputs.R` menghasilkan PNG statis dengan `Base` sebagai scenario default. Slicer dinamis berlaku untuk R Visual yang dijalankan di Power BI dan menerima data terfilter dari Power BI.
 
 Forecast menggunakan **3-Month Moving Average** dan **12-Month Forward Forecast**.
 
@@ -316,8 +380,15 @@ library(ggplot2)
 library(lubridate)
 
 COLORS <- list(navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6", sky = "#8EC5FC", slate = "#64748B", text = "#334155", white = "#FFFFFF")
-monthly <- demand_final |>
-  filter(Scenario == "Base") |>
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+visual_data <- demand_final |> filter(Scenario == selected_scenario)
+
+monthly <- visual_data |>
   mutate(
     TahunBulan = as.Date(paste0(TahunBulan, "-01"))
   ) |>
