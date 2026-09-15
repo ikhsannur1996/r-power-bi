@@ -10,11 +10,9 @@ End-to-end analytics project menggunakan **R + Power BI** untuk menganalisis dem
 ```text
 Dataset
    ↓
-Transformation 1 — Prepare Data
+Transformation 1 — Prepare & Aggregate Data
    ↓
-Transformation 2 — Aggregate Demand
-   ↓
-Transformation 3 — Generate What-If Scenarios
+Transformation 2 — Generate What-If Scenarios
    ↓
 demand_final
    ↓
@@ -75,35 +73,18 @@ dataset <- expand.grid(
   )
 ```
 
-## 3. Transformation 1 — Prepare Data
+## 3. Transformation 1 — Prepare & Aggregate Data
 
-Membuat monthly analytical date dan menghitung demand value.
+Transformation ini menggabungkan proses prepare data dan aggregate demand. Kolom `TahunBulan` dibuat dari `Tahun` dan `Bulan`, kemudian `DemandValue` dihitung sebelum data diagregasi.
 
 ```r
-step1 <- dataset |>
+step2 <- dataset |>
   mutate(
-    TahunBulan = as.Date(paste(Tahun, sprintf("%02d", Bulan), "01", sep = "-")),
+    TahunBulan = as.Date(
+      paste(Tahun, sprintf("%02d", Bulan), "01", sep = "-")
+    ),
     DemandValue = Permintaan * Harga
-  )
-
-output <- step1
-```
-
-Output:
-
-```text
-TahunBulan
-DemandValue
-```
-
-[Download step1_prepared.csv](dataset/step1_prepared.csv)
-
-## 4. Transformation 2 — Aggregate Demand
-
-Data diagregasi berdasarkan time, SKU, product, attributes, dan location.
-
-```r
-step2 <- step1 |>
+  ) |>
   group_by(
     TahunBulan, Tahun, Bulan, NamaBulan, SKU, Produk,
     Kategori, Rasa, Ukuran, Packing, Lokasi
@@ -116,15 +97,22 @@ step2 <- step1 |>
     .groups = "drop"
   )
 
-output <- step2 |>
-  mutate(
-    TahunBulan = format(TahunBulan, "%Y-%m")
-  )
+output <- step2
+```
+
+Output utama:
+
+```text
+TahunBulan
+Demand
+DemandValue
+Capacity
+Harga
 ```
 
 [Download step2_aggregated.csv](dataset/step2_aggregated.csv)
 
-## 5. Transformation 3 — Generate What-If Scenarios
+## 4. Transformation 2 — Generate What-If Scenarios
 
 Scenario dibuat sebagai **rows**, bukan sebagai banyak scenario columns.
 
@@ -182,7 +170,7 @@ CapacityGap < 0  → Production Shortage
 ```
 
 
-## 6. R Analytics & Visualization
+## 5. R Analytics & Visualization
 
 ### Demand vs Capacity
 
@@ -317,7 +305,7 @@ demand_final |>
 
 Mengidentifikasi SKU yang paling berkontribusi terhadap production shortage.
 
-## 7. Demand Forecast
+## 6. Demand Forecast
 
 Forecast menggunakan **3-Month Moving Average** dan **12-Month Forward Forecast**.
 
@@ -426,7 +414,7 @@ Actual Demand
 Forecast Range
 ```
 
-## 8. Power BI Dashboard
+## 7. Power BI Dashboard
 
 Final table:
 
@@ -485,7 +473,7 @@ SKU Capacity Risk Pareto
 Scenario Slicer
 ```
 
-## 9. Business Framework
+## 8. Business Framework
 
 ```text
 Demand
@@ -513,7 +501,7 @@ Project menjawab:
 
 > **If demand changes under different scenarios, can our production capacity handle it, which SKUs are at risk, and what will be the potential financial impact?**
 
-## 10. Technology Stack
+## 9. Technology Stack
 
 | Technology | Purpose                                                   |
 | ---------- | --------------------------------------------------------- |
@@ -523,14 +511,12 @@ Project menjawab:
 | lubridate  | Date manipulation & forecasting                           |
 | Power BI   | Interactive dashboard                                     |
 
-## 11. Final Output
+## 10. Final Output
 
 ```text
 dataset
    ↓
-step1
-   ↓
-step2
+step2 (Prepare & Aggregate)
    ↓
 demand_final
    ↓
@@ -555,4 +541,4 @@ Risk Analysis
 Forecasting
 ```
 
-Dengan **3 transformation utama** dan pendekatan **Scenario-as-Rows**, project ini menyediakan framework sederhana dan fleksibel untuk **Demand Planning, Capacity Planning, Production Planning, dan What-If Business Analysis**.
+Dengan **2 transformation utama** dan pendekatan **Scenario-as-Rows**, project ini menyediakan framework sederhana dan fleksibel untuk **Demand Planning, Capacity Planning, Production Planning, dan What-If Business Analysis**.
