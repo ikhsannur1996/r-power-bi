@@ -109,11 +109,15 @@ suppressPackageStartupMessages(library(dplyr))
 
 step2 <- step1 |>
   mutate(
-    # Normalisasi tanggal sebelum grouping.
-    TahunBulan = as.Date(format(TahunBulan, "%Y-%m-%d"))
+    # Jangan memakai format(TahunBulan, ...) karena TahunBulan dari
+    # Power BI dapat berupa object Microsoft.OleDb.Date.
+    # Bangun ulang tanggal dari Tahun dan Bulan agar stabil.
+    TahunBulan_R = as.Date(
+      sprintf("%04d-%02d-01", as.integer(Tahun), as.integer(Bulan))
+    )
   ) |>
   group_by(
-    TahunBulan, Tahun, Bulan, NamaBulan, SKU, Produk,
+    TahunBulan_R, Tahun, Bulan, NamaBulan, SKU, Produk,
     Kategori, Rasa, Ukuran, Packing, Lokasi
   ) |>
   summarise(
@@ -125,11 +129,15 @@ step2 <- step1 |>
   ) |>
   ungroup()
 
-# Kembalikan tanggal sebagai teks ISO agar Power BI tidak menerima
-# object date internal Microsoft.OleDb.Date dari ADO.NET.
+# Kembalikan dengan nama kolom TahunBulan sebagai teks ISO.
 output <- step2 |>
   mutate(
-    TahunBulan = format(TahunBulan, "%Y-%m-%d")
+    TahunBulan = sprintf("%04d-%02d-01", as.integer(Tahun), as.integer(Bulan))
+  ) |>
+  select(
+    TahunBulan, Tahun, Bulan, NamaBulan, SKU, Produk,
+    Kategori, Rasa, Ukuran, Packing, Lokasi,
+    Demand, DemandValue, Capacity, Harga
   ) |>
   as.data.frame(stringsAsFactors = FALSE)
 ```
