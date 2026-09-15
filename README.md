@@ -78,6 +78,8 @@ dataset <- expand.grid(
 Transformation ini menggabungkan proses prepare data dan aggregate demand. Kolom `TahunBulan` dibuat dari `Tahun` dan `Bulan`, kemudian `DemandValue` dihitung sebelum data diagregasi.
 
 ```r
+library(dplyr)
+
 step2 <- dataset |>
   mutate(
     TahunBulan = as.Date(
@@ -125,6 +127,8 @@ Scenario dibuat sebagai **rows**, bukan sebagai banyak scenario columns.
 ```
 
 ```r
+library(dplyr)
+
 scenarios <- data.frame(
   Scenario = c("-30%", "-20%", "-10%", "Base", "+10%", "+20%", "+30%"),
   Growth = c(-0.30, -0.20, -0.10, 0.00, 0.10, 0.20, 0.30)
@@ -215,6 +219,9 @@ demand_final |>
 ### Violin Plot — Demand Distribution
 
 ```r
+library(dplyr)
+library(ggplot2)
+
 ggplot(demand_final, aes(x = Produk, y = ScenarioDemand, fill = Produk)) +
   geom_violin(alpha = .7, trim = FALSE) +
   geom_boxplot(width = .12, fill = "white") +
@@ -235,6 +242,9 @@ Digunakan untuk melihat bentuk distribusi demand.
 ### Polar Seasonality
 
 ```r
+library(dplyr)
+library(ggplot2)
+
 demand_final |>
   group_by(Bulan) |>
   summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
@@ -258,6 +268,9 @@ Menunjukkan pola demand bulanan dan seasonality.
 ### Capacity Utilization Heatmap
 
 ```r
+library(dplyr)
+library(ggplot2)
+
 demand_final |>
   group_by(Produk, Lokasi) |>
   summarise(
@@ -284,6 +297,9 @@ Menganalisis utilization berdasarkan **Product × Location**.
 ### Pareto — SKU Capacity Risk
 
 ```r
+library(dplyr)
+library(ggplot2)
+
 demand_final |>
   group_by(SKU) |>
   summarise(Shortage = sum(pmax(-CapacityGap, 0)), .groups = "drop") |>
