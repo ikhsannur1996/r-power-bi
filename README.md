@@ -116,7 +116,10 @@ step2 <- step1 |>
     .groups = "drop"
   )
 
-output <- step2
+output <- step2 |>
+  mutate(
+    TahunBulan = format(TahunBulan, "%Y-%m")
+  )
 ```
 
 [Download step2_aggregated.csv](dataset/step2_aggregated.csv)
