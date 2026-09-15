@@ -23,7 +23,7 @@ R Visualization & Forecasting
 Power BI Dashboard
    ↓
 Business Decision
-````
+```
 
 ## 2. Dataset
 
@@ -85,6 +85,8 @@ step1 <- dataset |>
     TahunBulan = as.Date(paste(Tahun, sprintf("%02d", Bulan), "01", sep = "-")),
     DemandValue = Permintaan * Harga
   )
+
+output <- step1
 ```
 
 Output:
@@ -93,6 +95,8 @@ Output:
 TahunBulan
 DemandValue
 ```
+
+[Download step1_prepared.csv](dataset/step1_prepared.csv)
 
 ## 4. Transformation 2 — Aggregate Demand
 
@@ -111,7 +115,11 @@ step2 <- step1 |>
     Harga = mean(Harga, na.rm = TRUE),
     .groups = "drop"
   )
+
+output <- step2
 ```
+
+[Download step2_aggregated.csv](dataset/step2_aggregated.csv)
 
 ## 5. Transformation 3 — Generate What-If Scenarios
 
@@ -135,6 +143,8 @@ demand_final <- merge(step2, scenarios) |>
     CapacityGap = Capacity - ScenarioDemand,
     RevenueImpact = ScenarioValue - DemandValue
   )
+
+output <- demand_final
 ```
 
 Final analytical table:
@@ -142,6 +152,8 @@ Final analytical table:
 ```text
 demand_final
 ```
+
+[Download demand_final.csv](dataset/demand_final.csv)
 
 Key metrics:
 
@@ -165,6 +177,7 @@ CapacityGap > 0  → Available Capacity
 CapacityGap = 0  → Fully Utilized
 CapacityGap < 0  → Production Shortage
 ```
+
 
 ## 6. R Analytics & Visualization
 
@@ -200,25 +213,6 @@ demand_final |>
 
 **Insight:** ketika `Demand > Capacity`, terdapat potensi production shortage.
 
-### Boxplot — Demand Variability
-
-```r
-ggplot(demand_final, aes(x = Produk, y = ScenarioDemand, fill = Produk)) +
-  geom_boxplot(alpha = .75, outlier.alpha = .4) +
-  labs(
-    title = "Demand Variability",
-    subtitle = "Distribution of demand by product",
-    x = NULL, y = "Scenario Demand"
-  ) +
-  theme_minimal()
-```
-
-![Demand Variability](output/02_demand_variability_boxplot.png)
-
-*Boxplot menunjukkan median, kuartil, variasi, dan outlier demand untuk setiap produk.*
-
-Menunjukkan median, variability, dan outlier demand per product.
-
 ### Violin Plot — Demand Distribution
 
 ```r
@@ -233,7 +227,7 @@ ggplot(demand_final, aes(x = Produk, y = ScenarioDemand, fill = Produk)) +
   theme_minimal()
 ```
 
-![Demand Distribution](output/03_demand_distribution_violin.png)
+![Demand Distribution](output/02_demand_distribution_violin.png)
 
 *Violin menunjukkan bentuk distribusi demand; titik gold menunjukkan outlier yang terdeteksi.*
 
@@ -256,33 +250,11 @@ demand_final |>
   theme_minimal()
 ```
 
-![Monthly Demand Pattern](output/04_monthly_demand_polar.png)
+![Monthly Demand Pattern](output/03_monthly_demand_polar.png)
 
 *Biru tua menunjukkan demand di atas rata-rata, biru muda menunjukkan demand di bawah rata-rata, dan garis putus-putus menunjukkan monthly average.*
 
 Menunjukkan pola demand bulanan dan seasonality.
-
-### Dot Plot — SKU Demand
-
-```r
-demand_final |>
-  group_by(SKU) |>
-  summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
-  ggplot(aes(x = Demand, y = reorder(SKU, Demand))) +
-  geom_point(size = 4) +
-  labs(
-    title = "SKU Demand Distribution",
-    subtitle = "Selected scenario",
-    x = "Demand", y = NULL
-  ) +
-  theme_minimal()
-```
-
-![SKU Demand Distribution](output/05_sku_demand_dotplot.png)
-
-*Setiap titik menunjukkan total demand untuk satu SKU; garis tipis membantu membandingkan posisi antar-SKU.*
-
-Membandingkan demand antar-SKU.
 
 ### Capacity Utilization Heatmap
 
@@ -304,7 +276,7 @@ demand_final |>
   theme_minimal()
 ```
 
-![Capacity Utilization by Location](output/06_capacity_utilization_heatmap.png)
+![Capacity Utilization by Location](output/04_capacity_utilization_heatmap.png)
 
 *Warna yang semakin kuat menunjukkan utilization yang semakin tinggi pada kombinasi product dan location.*
 
@@ -336,7 +308,7 @@ demand_final |>
   theme_minimal()
 ```
 
-![SKU Capacity Risk Pareto](output/07_sku_capacity_risk_pareto.png)
+![SKU Capacity Risk Pareto](output/05_sku_capacity_risk_pareto.png)
 
 *Bar coral menunjukkan shortage per SKU, sedangkan garis aqua menunjukkan cumulative shortage contribution.*
 
@@ -438,7 +410,7 @@ ggplot() +
   )
 ```
 
-![Demand Forecast Band](output/08_demand_forecast_band.png)
+![Demand Forecast Band](output/06_demand_forecast_band.png)
 
 *Actual Demand ditampilkan sebagai garis solid; 3-Month Moving Average dan 12-Month Forecast sebagai garis dashed; area biru muda menunjukkan forecast range.*
 
