@@ -1,4 +1,4 @@
-TahunBulan,Demand,Forecast,Lower,Upper,Type
+Tanggal,Demand,Forecast,Lower,Upper,Type
 2024-01-01,26072,,,,Historical
 2024-02-01,31300,,,,Historical
 2024-03-01,31774,29715.333333333332,,,Historical

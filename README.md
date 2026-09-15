@@ -75,20 +75,15 @@ dataset <- expand.grid(
 
 ## 3. Transformation 1 — Prepare & Aggregate Data
 
-Transformation ini menggabungkan proses prepare data dan aggregate demand. Kolom `TahunBulan` dibuat dari `Tahun` dan `Bulan`, kemudian `DemandValue` dihitung sebelum data diagregasi.
+Transformation ini menggunakan kolom `Tanggal` yang sudah tersedia, menghitung `DemandValue`, dan melakukan agregasi demand tanpa membuat kolom tanggal baru.
 
 ```r
 library(dplyr)
 
 step2 <- dataset |>
-  mutate(
-    TahunBulan = as.Date(
-      paste(Tahun, sprintf("%02d", Bulan), "01", sep = "-")
-    ),
-    DemandValue = Permintaan * Harga
-  ) |>
+  mutate(DemandValue = Permintaan * Harga) |>
   group_by(
-    TahunBulan, Tahun, Bulan, NamaBulan, SKU, Produk,
+    Tanggal, Tahun, Bulan, NamaBulan, SKU, Produk,
     Kategori, Rasa, Ukuran, Packing, Lokasi
   ) |>
   summarise(
@@ -97,24 +92,22 @@ step2 <- dataset |>
     Capacity = mean(Kapasitas, na.rm = TRUE),
     Harga = mean(Harga, na.rm = TRUE),
     .groups = "drop"
-  )
+  ) |>
+  ungroup()
 
-output <- step2 |>
-  mutate(
-    # Kirim sebagai string YYYY-MM agar Power BI tidak menerima Microsoft.OleDb.Date.
-    TahunBulan = sprintf("%04d-%02d", as.integer(Tahun), as.integer(Bulan))
-  )
+output <- step2
 ```
 
 Output utama:
 
 ```text
-TahunBulan
+Tanggal
 Demand
 DemandValue
 Capacity
 Harga
 ```
+
 
 [Download step2_aggregated.csv](dataset/step2_aggregated.csv)
 
@@ -143,11 +136,7 @@ demand_final <- merge(step2, scenarios) |>
     RevenueImpact = ScenarioValue - DemandValue
   )
 
-output <- demand_final |>
-  mutate(
-    # Pastikan output final juga berupa string YYYY-MM.
-    TahunBulan = sprintf("%04d-%02d", as.integer(Tahun), as.integer(Bulan))
-  )
+output <- demand_final
 ```
 
 Final analytical table:
@@ -389,16 +378,17 @@ selected_scenario <- if ("Scenario" %in% names(demand_final)) {
 visual_data <- demand_final |> filter(Scenario == selected_scenario)
 
 monthly <- visual_data |>
-  mutate(
-    TahunBulan = as.Date(paste0(TahunBulan, "-01"))
+  group_by(Tanggal) |>
+  summarise(
+    Demand = sum(ScenarioDemand),
+    Capacity = sum(Capacity),
+    .groups = "drop"
   ) |>
-  group_by(TahunBulan) |>
-  summarise(Demand = sum(ScenarioDemand), Capacity = sum(Capacity), .groups = "drop") |>
-  arrange(TahunBulan)
+  arrange(Tanggal)
 
 df <- monthly |>
   mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
-future <- tibble(TahunBulan = seq(max(df$TahunBulan) %m+% months(1), max(df$TahunBulan) %m+% months(12), by = "month"), Forecast = NA_real_)
+future <- tibble(Tanggal = seq(max(df$Tanggal) %m+% months(1), max(df$Tanggal) %m+% months(12), by = "month"), Forecast = NA_real_)
 for (i in seq_len(nrow(future))) {
   values <- c(tail(df$Demand, 3), future$Forecast[seq_len(i - 1)])
   future$Forecast[i] <- mean(tail(values, 3), na.rm = TRUE)
@@ -407,11 +397,11 @@ sd_demand <- sd(df$Demand, na.rm = TRUE)
 future <- future |> mutate(Upper = Forecast + sd_demand, Lower = Forecast - sd_demand)
 
 ggplot() +
-  geom_ribbon(data = future, aes(TahunBulan, ymin = Lower, ymax = Upper, fill = "Forecast Range"), alpha = .2) +
-  geom_line(data = df |> filter(!is.na(Forecast)), aes(TahunBulan, Forecast, color = "3-Month Moving Average", linetype = "3-Month Moving Average"), linewidth = .95) +
-  geom_line(data = df, aes(TahunBulan, Demand, color = "Actual Demand", linetype = "Actual Demand"), linewidth = 1.1) +
-  geom_line(data = future, aes(TahunBulan, Forecast, color = "12-Month Forecast", linetype = "12-Month Forecast"), linewidth = 1.1) +
-  geom_vline(xintercept = max(df$TahunBulan), linetype = "dotted", color = COLORS$slate) +
+  geom_ribbon(data = future, aes(Tanggal, ymin = Lower, ymax = Upper, fill = "Forecast Range"), alpha = .2) +
+  geom_line(data = df |> filter(!is.na(Forecast)), aes(Tanggal, Forecast, color = "3-Month Moving Average", linetype = "3-Month Moving Average"), linewidth = .95) +
+  geom_line(data = df, aes(Tanggal, Demand, color = "Actual Demand", linetype = "Actual Demand"), linewidth = 1.1) +
+  geom_line(data = future, aes(Tanggal, Forecast, color = "12-Month Forecast", linetype = "12-Month Forecast"), linewidth = 1.1) +
+  geom_vline(xintercept = max(df$Tanggal), linetype = "dotted", color = COLORS$slate) +
   scale_color_manual(values = c("Actual Demand" = COLORS$navy, "3-Month Moving Average" = COLORS$violet, "12-Month Forecast" = COLORS$aqua), name = NULL) +
   scale_linetype_manual(values = c("Actual Demand" = "solid", "3-Month Moving Average" = "dashed", "12-Month Forecast" = "dashed"), name = NULL) +
   scale_fill_manual(values = c("Forecast Range" = COLORS$sky), name = NULL) +

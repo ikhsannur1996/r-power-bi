@@ -1,4 +1,4 @@
-TahunBulan,Tahun,Bulan,NamaBulan,SKU,Produk,Kategori,Rasa,Ukuran,Packing,Lokasi,Demand,DemandValue,Capacity,Harga
+Tanggal,Tahun,Bulan,NamaBulan,SKU,Produk,Kategori,Rasa,Ukuran,Packing,Lokasi,Demand,DemandValue,Capacity,Harga
 2024-01-01,2024,1,January,SKU01,Product A,Food,Vanilla,Medium,Bottle,Jakarta,2936,14680000,4000,5000
 2024-01-01,2024,1,January,SKU02,Product A,Food,Vanilla,Medium,Box,Bandung,2834,14170000,6000,5000
 2024-01-01,2024,1,January,SKU03,Product A,Food,Vanilla,Small,Bottle,Jakarta,1087,10870000,5000,10000

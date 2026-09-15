@@ -38,11 +38,10 @@ dataset <- expand.grid(
   )
 
 step1 <- dataset |>
-  mutate(TahunBulan = as.Date(sprintf("%d-%02d-01", Tahun, Bulan)),
-         DemandValue = Permintaan * Harga)
+  mutate(DemandValue = Permintaan * Harga)
 
 step2 <- step1 |>
-  group_by(TahunBulan, Tahun, Bulan, NamaBulan, SKU, Produk,
+  group_by(Tanggal, Tahun, Bulan, NamaBulan, SKU, Produk,
            Kategori, Rasa, Ukuran, Packing, Lokasi) |>
   summarise(Demand = sum(Permintaan, na.rm = TRUE),
             DemandValue = sum(DemandValue, na.rm = TRUE),
@@ -60,7 +59,7 @@ demand_final <- crossing(step2, scenarios) |>
          Utilization = ScenarioDemand / Capacity,
          CapacityGap = Capacity - ScenarioDemand,
          RevenueImpact = ScenarioValue - DemandValue) |>
-  arrange(TahunBulan, SKU, Scenario)
+  arrange(Tanggal, SKU, Scenario)
 
 write_csv(dataset, file.path(dataset_dir, "dataset.csv"), na = "")
 write_csv(step1, file.path(dataset_dir, "step1_prepared.csv"), na = "")
@@ -98,7 +97,7 @@ save_plot <- function(name, plot, width = 10, height = 6) {
   ggsave(file.path(output_dir, name), plot, width = width, height = height, dpi = 150, bg = COLORS$white)
 }
 monthly <- base |>
-  group_by(TahunBulan) |>
+  group_by(Tanggal) |>
   summarise(Demand = sum(ScenarioDemand), Capacity = sum(Capacity), .groups = "drop")
 
 
@@ -139,8 +138,8 @@ save_plot("04_sku_capacity_risk_pareto.png", p4)
 
 
 # Recursive 3-month moving average, projected 12 months forward.
-df <- monthly |> arrange(TahunBulan) |> mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
-future <- tibble(TahunBulan = seq(max(df$TahunBulan) %m+% months(1), max(df$TahunBulan) %m+% months(12), by = "month"), Forecast = NA_real_)
+df <- monthly |> arrange(Tanggal) |> mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
+future <- tibble(Tanggal = seq(max(df$Tanggal) %m+% months(1), max(df$Tanggal) %m+% months(12), by = "month"), Forecast = NA_real_)
 for (i in seq_len(nrow(future))) {
   values <- c(tail(df$Demand, 3), future$Forecast[seq_len(i - 1)])
   future$Forecast[i] <- mean(tail(values, 3), na.rm = TRUE)
@@ -148,18 +147,18 @@ for (i in seq_len(nrow(future))) {
 sd_demand <- sd(df$Demand, na.rm = TRUE)
 future <- future |> mutate(Upper = Forecast + sd_demand, Lower = Forecast - sd_demand)
 forecast_plot <- ggplot() +
-  geom_ribbon(data = future, aes(TahunBulan, ymin = Lower, ymax = Upper, fill = "Forecast Range"), alpha = .2) +
-  geom_line(data = df |> filter(!is.na(Forecast)), aes(TahunBulan, Forecast, color = "3-Month Moving Average", linetype = "3-Month Moving Average"), linewidth = .95) +
-  geom_line(data = df, aes(TahunBulan, Demand, color = "Actual Demand", linetype = "Actual Demand"), linewidth = 1.1) +
-  geom_line(data = future, aes(TahunBulan, Forecast, color = "12-Month Forecast", linetype = "12-Month Forecast"), linewidth = 1.1) +
-  geom_vline(xintercept = max(df$TahunBulan), linetype = "dotted", color = COLORS$slate) +
+  geom_ribbon(data = future, aes(Tanggal, ymin = Lower, ymax = Upper, fill = "Forecast Range"), alpha = .2) +
+  geom_line(data = df |> filter(!is.na(Forecast)), aes(Tanggal, Forecast, color = "3-Month Moving Average", linetype = "3-Month Moving Average"), linewidth = .95) +
+  geom_line(data = df, aes(Tanggal, Demand, color = "Actual Demand", linetype = "Actual Demand"), linewidth = 1.1) +
+  geom_line(data = future, aes(Tanggal, Forecast, color = "12-Month Forecast", linetype = "12-Month Forecast"), linewidth = 1.1) +
+  geom_vline(xintercept = max(df$Tanggal), linetype = "dotted", color = COLORS$slate) +
   scale_color_manual(values = c("Actual Demand" = COLORS$navy, "3-Month Moving Average" = COLORS$violet, "12-Month Forecast" = COLORS$aqua), name = NULL) +
   scale_linetype_manual(values = c("Actual Demand" = "solid", "3-Month Moving Average" = "dashed", "12-Month Forecast" = "dashed"), name = NULL) +
   scale_fill_manual(values = c("Forecast Range" = COLORS$sky), name = NULL) +
   labs(title = "Demand Forecast Band", subtitle = "Actual demand and 12-month forward forecast", x = NULL, y = "Demand") + theme_project
 save_plot("05_demand_forecast_band.png", forecast_plot)
 
-forecast_export <- bind_rows(df |> mutate(Lower = NA_real_, Upper = NA_real_, Type = "Historical"), future |> mutate(Demand = NA_real_, Type = "Forecast")) |> select(TahunBulan, Demand, Forecast, Lower, Upper, Type)
+forecast_export <- bind_rows(df |> mutate(Lower = NA_real_, Upper = NA_real_, Type = "Historical"), future |> mutate(Demand = NA_real_, Type = "Forecast")) |> select(Tanggal, Demand, Forecast, Lower, Upper, Type)
 write_csv(forecast_export, file.path(dataset_dir, "demand_forecast.csv"), na = "")
 cat("Generated", nrow(dataset), "dataset rows and", nrow(demand_final), "demand_final rows.\n")
 cat("CSV directory:", dataset_dir, "\nPNG directory:", output_dir, "\n")

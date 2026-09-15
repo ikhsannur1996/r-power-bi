@@ -1,4 +1,4 @@
-TahunBulan,Tahun,Bulan,NamaBulan,SKU,Produk,Kategori,Rasa,Ukuran,Packing,Lokasi,Demand,DemandValue,Capacity,Harga,Scenario,Growth,ScenarioDemand,ScenarioValue,Utilization,CapacityGap,RevenueImpact
+Tanggal,Tahun,Bulan,NamaBulan,SKU,Produk,Kategori,Rasa,Ukuran,Packing,Lokasi,Demand,DemandValue,Capacity,Harga,Scenario,Growth,ScenarioDemand,ScenarioValue,Utilization,CapacityGap,RevenueImpact
 2024-01-01,2024,1,January,SKU01,Product A,Food,Vanilla,Medium,Bottle,Jakarta,2936,14680000,4000,5000,+10%,0.1,3229.6000000000004,16148000.000000002,0.8074000000000001,770.3999999999996,1468000.0000000019
 2024-01-01,2024,1,January,SKU01,Product A,Food,Vanilla,Medium,Bottle,Jakarta,2936,14680000,4000,5000,+20%,0.2,3523.2,17616000,0.8807999999999999,476.8000000000002,2936000
 2024-01-01,2024,1,January,SKU01,Product A,Food,Vanilla,Medium,Bottle,Jakarta,2936,14680000,4000,5000,+30%,0.3,3816.8,19084000,0.9542,183.19999999999982,4404000
