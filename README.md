@@ -184,66 +184,6 @@ CapacityGap < 0  → Production Shortage
 
 ## 5. R Analytics & Visualization
 
-### Demand vs Capacity
-
-Membandingkan demand dan capacity dari waktu ke waktu.
-
-```r
-library(dplyr)
-library(ggplot2)
-
-COLORS <- list(
-  navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6",
-  sky = "#8EC5FC", coral = "#F26B5E", gold = "#F2B134",
-  slate = "#64748B", grid = "#E6EAF0", text = "#334155", white = "#FFFFFF"
-)
-
-theme_project <- theme_minimal(base_size = 11) +
-  theme(
-    plot.background = element_rect(fill = COLORS$white, color = NA),
-    panel.background = element_rect(fill = COLORS$white, color = NA),
-    panel.grid.minor = element_blank(),
-    panel.grid.major = element_line(color = COLORS$grid, linewidth = .35),
-    axis.text = element_text(color = COLORS$text),
-    axis.title = element_text(color = COLORS$text),
-    plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
-    plot.subtitle = element_text(size = 10, color = COLORS$slate),
-    legend.position = "bottom",
-    legend.title = element_text(face = "bold", color = COLORS$text),
-    legend.text = element_text(color = COLORS$text),
-    legend.key.width = grid::unit(1.3, "cm"),
-    legend.key.height = grid::unit(.45, "cm")
-  )
-
-monthly <- demand_final |>
-  filter(Scenario == "Base") |>
-  group_by(TahunBulan) |>
-  summarise(Demand = sum(ScenarioDemand), Capacity = sum(Capacity), .groups = "drop") |>
-  mutate(
-    GapType = if_else(Demand > Capacity, "Production Shortage", "Available Capacity"),
-    BandLow = pmin(Demand, Capacity), BandHigh = pmax(Demand, Capacity)
-  )
-
-p1 <- ggplot(monthly, aes(TahunBulan)) +
-  geom_ribbon(aes(ymin = BandLow, ymax = BandHigh, fill = GapType), alpha = .22) +
-  geom_line(aes(y = Demand, color = "Demand", linetype = "Demand"), linewidth = 1.15) +
-  geom_line(aes(y = Capacity, color = "Capacity", linetype = "Capacity"), linewidth = 1.1) +
-  scale_color_manual(values = c(Demand = COLORS$navy, Capacity = COLORS$aqua), name = NULL) +
-  scale_linetype_manual(values = c(Demand = "solid", Capacity = "dashed"), name = NULL) +
-  scale_fill_manual(values = c("Production Shortage" = COLORS$coral, "Available Capacity" = COLORS$sky), name = "Capacity Status") +
-  labs(title = "Demand vs Capacity", subtitle = "Monthly production pressure | Base scenario", x = NULL, y = "Units") +
-  guides(fill = guide_legend(order = 2, override.aes = list(alpha = .35))) +
-  theme_project
-
-p1
-```
-
-![Demand vs Capacity](output/01_demand_vs_capacity.png)
-
-*Demand solid line, capacity dashed line, area coral menunjukkan production shortage, dan area biru muda menunjukkan available capacity.*
-
-**Insight:** ketika `Demand > Capacity`, terdapat potensi production shortage.
-
 ### Violin Plot — Demand Distribution
 
 ```r
@@ -267,7 +207,7 @@ ggplot(demand_final |> filter(Scenario == "Base"), aes(Produk, ScenarioDemand, f
         panel.grid.minor = element_blank())
 ```
 
-![Demand Distribution](output/02_demand_distribution_violin.png)
+![Demand Distribution](output/01_demand_distribution_violin.png)
 
 *Violin menunjukkan bentuk distribusi demand; titik gold menunjukkan outlier yang terdeteksi.*
 
@@ -299,7 +239,7 @@ ggplot(seasonality, aes(Bulan, Demand)) +
         panel.grid.minor = element_blank(), legend.position = "bottom")
 ```
 
-![Monthly Demand Pattern](output/03_monthly_demand_polar.png)
+![Monthly Demand Pattern](output/02_monthly_demand_polar.png)
 
 *Biru tua menunjukkan demand di atas rata-rata, biru muda menunjukkan demand di bawah rata-rata, dan garis putus-putus menunjukkan monthly average.*
 
@@ -328,7 +268,7 @@ ggplot(utilization, aes(Lokasi, Produk, fill = Utilization)) +
         panel.grid = element_blank(), legend.position = "bottom")
 ```
 
-![Capacity Utilization by Location](output/04_capacity_utilization_heatmap.png)
+![Capacity Utilization by Location](output/03_capacity_utilization_heatmap.png)
 
 *Warna yang semakin kuat menunjukkan utilization yang semakin tinggi pada kombinasi product dan location.*
 
@@ -360,7 +300,7 @@ ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
         plot.subtitle = element_text(size = 10, color = COLORS$text), legend.position = "bottom")
 ```
 
-![SKU Capacity Risk Pareto](output/05_sku_capacity_risk_pareto.png)
+![SKU Capacity Risk Pareto](output/04_sku_capacity_risk_pareto.png)
 
 *Bar coral menunjukkan shortage per SKU, sedangkan garis aqua menunjukkan cumulative shortage contribution.*
 
@@ -411,7 +351,7 @@ ggplot() +
         legend.position = "bottom")
 ```
 
-![Demand Forecast Band](output/06_demand_forecast_band.png)
+![Demand Forecast Band](output/05_demand_forecast_band.png)
 
 *Actual Demand ditampilkan sebagai garis solid; 3-Month Moving Average dan 12-Month Forecast sebagai garis dashed; area biru muda menunjukkan forecast range.*
 
