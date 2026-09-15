@@ -103,7 +103,15 @@ DemandValue
 Data diagregasi berdasarkan time, SKU, product, attributes, dan location.
 
 ```r
+# Transformation 2 — Aggregate Demand
+# Pastikan dplyr tersedia pada instalasi R yang digunakan Power BI.
+suppressPackageStartupMessages(library(dplyr))
+
 step2 <- step1 |>
+  mutate(
+    # Normalisasi tanggal sebelum grouping.
+    TahunBulan = as.Date(format(TahunBulan, "%Y-%m-%d"))
+  ) |>
   group_by(
     TahunBulan, Tahun, Bulan, NamaBulan, SKU, Produk,
     Kategori, Rasa, Ukuran, Packing, Lokasi
@@ -114,10 +122,19 @@ step2 <- step1 |>
     Capacity = mean(Kapasitas, na.rm = TRUE),
     Harga = mean(Harga, na.rm = TRUE),
     .groups = "drop"
-  )
+  ) |>
+  ungroup()
 
-output <- step2
+# Kembalikan tanggal sebagai teks ISO agar Power BI tidak menerima
+# object date internal Microsoft.OleDb.Date dari ADO.NET.
+output <- step2 |>
+  mutate(
+    TahunBulan = format(TahunBulan, "%Y-%m-%d")
+  ) |>
+  as.data.frame(stringsAsFactors = FALSE)
 ```
+
+> Di Power Query, ubah kembali `TahunBulan` menjadi tipe **Date** dengan `Transform → Data Type → Date`.
 
 [Download step2_aggregated.csv](dataset/step2_aggregated.csv)
 
