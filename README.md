@@ -194,6 +194,10 @@ demand_final |>
   theme_minimal()
 ```
 
+![Demand vs Capacity](output/01_demand_vs_capacity.png)
+
+*Demand solid line, capacity dashed line, area coral menunjukkan production shortage, dan area biru muda menunjukkan available capacity.*
+
 **Insight:** ketika `Demand > Capacity`, terdapat potensi production shortage.
 
 ### Boxplot — Demand Variability
@@ -208,6 +212,10 @@ ggplot(demand_final, aes(x = Produk, y = ScenarioDemand, fill = Produk)) +
   ) +
   theme_minimal()
 ```
+
+![Demand Variability](output/02_demand_variability_boxplot.png)
+
+*Boxplot menunjukkan median, kuartil, variasi, dan outlier demand untuk setiap produk.*
 
 Menunjukkan median, variability, dan outlier demand per product.
 
@@ -224,6 +232,10 @@ ggplot(demand_final, aes(x = Produk, y = ScenarioDemand, fill = Produk)) +
   ) +
   theme_minimal()
 ```
+
+![Demand Distribution](output/03_demand_distribution_violin.png)
+
+*Violin menunjukkan bentuk distribusi demand; titik gold menunjukkan outlier yang terdeteksi.*
 
 Digunakan untuk melihat bentuk distribusi demand.
 
@@ -244,6 +256,10 @@ demand_final |>
   theme_minimal()
 ```
 
+![Monthly Demand Pattern](output/04_monthly_demand_polar.png)
+
+*Biru tua menunjukkan demand di atas rata-rata, biru muda menunjukkan demand di bawah rata-rata, dan garis putus-putus menunjukkan monthly average.*
+
 Menunjukkan pola demand bulanan dan seasonality.
 
 ### Dot Plot — SKU Demand
@@ -261,6 +277,10 @@ demand_final |>
   ) +
   theme_minimal()
 ```
+
+![SKU Demand Distribution](output/05_sku_demand_dotplot.png)
+
+*Setiap titik menunjukkan total demand untuk satu SKU; garis tipis membantu membandingkan posisi antar-SKU.*
 
 Membandingkan demand antar-SKU.
 
@@ -283,6 +303,10 @@ demand_final |>
   ) +
   theme_minimal()
 ```
+
+![Capacity Utilization by Location](output/06_capacity_utilization_heatmap.png)
+
+*Warna yang semakin kuat menunjukkan utilization yang semakin tinggi pada kombinasi product dan location.*
 
 Menganalisis utilization berdasarkan **Product × Location**.
 
@@ -311,6 +335,10 @@ demand_final |>
   ) +
   theme_minimal()
 ```
+
+![SKU Capacity Risk Pareto](output/07_sku_capacity_risk_pareto.png)
+
+*Bar coral menunjukkan shortage per SKU, sedangkan garis aqua menunjukkan cumulative shortage contribution.*
 
 Mengidentifikasi SKU yang paling berkontribusi terhadap production shortage.
 
@@ -409,6 +437,10 @@ ggplot() +
     legend.position = "bottom"
   )
 ```
+
+![Demand Forecast Band](output/08_demand_forecast_band.png)
+
+*Actual Demand ditampilkan sebagai garis solid; 3-Month Moving Average dan 12-Month Forecast sebagai garis dashed; area biru muda menunjukkan forecast range.*
 
 Forecast terdiri dari:
 
