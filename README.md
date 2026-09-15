@@ -192,22 +192,50 @@ Membandingkan demand dan capacity dari waktu ke waktu.
 library(dplyr)
 library(ggplot2)
 
-demand_final |>
+COLORS <- list(
+  navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6",
+  sky = "#8EC5FC", coral = "#F26B5E", gold = "#F2B134",
+  slate = "#64748B", grid = "#E6EAF0", text = "#334155", white = "#FFFFFF"
+)
+
+theme_project <- theme_minimal(base_size = 11) +
+  theme(
+    plot.background = element_rect(fill = COLORS$white, color = NA),
+    panel.background = element_rect(fill = COLORS$white, color = NA),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = COLORS$grid, linewidth = .35),
+    axis.text = element_text(color = COLORS$text),
+    axis.title = element_text(color = COLORS$text),
+    plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+    plot.subtitle = element_text(size = 10, color = COLORS$slate),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold", color = COLORS$text),
+    legend.text = element_text(color = COLORS$text),
+    legend.key.width = grid::unit(1.3, "cm"),
+    legend.key.height = grid::unit(.45, "cm")
+  )
+
+monthly <- demand_final |>
+  filter(Scenario == "Base") |>
   group_by(TahunBulan) |>
-  summarise(
-    Demand = sum(ScenarioDemand),
-    Capacity = sum(Capacity),
-    .groups = "drop"
-  ) |>
-  ggplot(aes(x = TahunBulan)) +
-  geom_line(aes(y = Demand, linetype = "Demand"), linewidth = 1.2) +
-  geom_line(aes(y = Capacity, linetype = "Capacity"), linewidth = 1.2) +
-  labs(
-    title = "Demand vs Capacity",
-    subtitle = "Monthly production pressure under selected scenario",
-    x = NULL, y = "Units", linetype = NULL
-  ) +
-  theme_minimal()
+  summarise(Demand = sum(ScenarioDemand), Capacity = sum(Capacity), .groups = "drop") |>
+  mutate(
+    GapType = if_else(Demand > Capacity, "Production Shortage", "Available Capacity"),
+    BandLow = pmin(Demand, Capacity), BandHigh = pmax(Demand, Capacity)
+  )
+
+p1 <- ggplot(monthly, aes(TahunBulan)) +
+  geom_ribbon(aes(ymin = BandLow, ymax = BandHigh, fill = GapType), alpha = .22) +
+  geom_line(aes(y = Demand, color = "Demand", linetype = "Demand"), linewidth = 1.15) +
+  geom_line(aes(y = Capacity, color = "Capacity", linetype = "Capacity"), linewidth = 1.1) +
+  scale_color_manual(values = c(Demand = COLORS$navy, Capacity = COLORS$aqua), name = NULL) +
+  scale_linetype_manual(values = c(Demand = "solid", Capacity = "dashed"), name = NULL) +
+  scale_fill_manual(values = c("Production Shortage" = COLORS$coral, "Available Capacity" = COLORS$sky), name = "Capacity Status") +
+  labs(title = "Demand vs Capacity", subtitle = "Monthly production pressure | Base scenario", x = NULL, y = "Units") +
+  guides(fill = guide_legend(order = 2, override.aes = list(alpha = .35))) +
+  theme_project
+
+p1
 ```
 
 ![Demand vs Capacity](output/01_demand_vs_capacity.png)
@@ -222,15 +250,21 @@ demand_final |>
 library(dplyr)
 library(ggplot2)
 
-ggplot(demand_final, aes(x = Produk, y = ScenarioDemand, fill = Produk)) +
-  geom_violin(alpha = .7, trim = FALSE) +
-  geom_boxplot(width = .12, fill = "white") +
-  labs(
-    title = "Demand Distribution",
-    subtitle = "Demand shape by product",
-    x = NULL, y = "Scenario Demand"
-  ) +
-  theme_minimal()
+COLORS <- list(navy = "#253B6E", gold = "#F2B134", white = "#FFFFFF", text = "#334155")
+PRODUCT_COLORS <- c("Product A" = "#3F8EFC", "Product B" = "#6C5CE7", "Product C" = "#16B8A6", "Product D" = "#F26B5E")
+
+ggplot(demand_final |> filter(Scenario == "Base"), aes(Produk, ScenarioDemand, fill = Produk)) +
+  geom_violin(color = COLORS$white, alpha = .85, trim = FALSE) +
+  geom_boxplot(width = .12, fill = COLORS$white, color = COLORS$navy,
+               outlier.shape = 21, outlier.fill = COLORS$gold,
+               outlier.color = COLORS$navy, outlier.size = 2.4,
+               outlier.stroke = .5) +
+  scale_fill_manual(values = PRODUCT_COLORS, guide = "none") +
+  labs(title = "Demand Distribution", subtitle = "Demand shape with outliers highlighted by product", x = NULL, y = "Scenario Demand") +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+        plot.subtitle = element_text(size = 10, color = COLORS$text),
+        panel.grid.minor = element_blank())
 ```
 
 ![Demand Distribution](output/02_demand_distribution_violin.png)
@@ -245,18 +279,24 @@ Digunakan untuk melihat bentuk distribusi demand.
 library(dplyr)
 library(ggplot2)
 
-demand_final |>
+COLORS <- list(navy = "#253B6E", sky = "#8EC5FC", slate = "#64748B", white = "#FFFFFF", text = "#334155")
+seasonality <- demand_final |>
+  filter(Scenario == "Base") |>
   group_by(Bulan) |>
   summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
-  ggplot(aes(x = Bulan, y = Demand)) +
-  geom_col(width = .9, fill = "steelblue") +
-  coord_polar() +
-  scale_x_continuous(breaks = 1:12) +
-  labs(
-    title = "Monthly Demand Pattern",
-    subtitle = "Selected scenario"
-  ) +
-  theme_minimal()
+  mutate(AverageDemand = mean(Demand), DemandLevel = if_else(Demand >= AverageDemand, "Above Average", "Below Average"))
+
+ggplot(seasonality, aes(Bulan, Demand)) +
+  geom_col(aes(fill = DemandLevel), width = .9) +
+  geom_hline(aes(yintercept = AverageDemand, linetype = "Monthly Average"), color = COLORS$slate, linewidth = .7) +
+  scale_fill_manual(values = c("Above Average" = COLORS$navy, "Below Average" = COLORS$sky), name = "Demand Level") +
+  scale_linetype_manual(values = c("Monthly Average" = "dashed"), name = NULL) +
+  coord_polar() + scale_x_continuous(breaks = 1:12) +
+  labs(title = "Monthly Demand Pattern", subtitle = "Demand compared with monthly average | Base scenario", x = NULL, y = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+        plot.subtitle = element_text(size = 10, color = COLORS$text),
+        panel.grid.minor = element_blank(), legend.position = "bottom")
 ```
 
 ![Monthly Demand Pattern](output/03_monthly_demand_polar.png)
@@ -271,21 +311,21 @@ Menunjukkan pola demand bulanan dan seasonality.
 library(dplyr)
 library(ggplot2)
 
-demand_final |>
+COLORS <- list(navy = "#253B6E", aqua = "#16B8A6", white = "#FFFFFF", text = "#334155")
+utilization <- demand_final |>
+  filter(Scenario == "Base") |>
   group_by(Produk, Lokasi) |>
-  summarise(
-    Utilization = sum(ScenarioDemand) / sum(Capacity),
-    .groups = "drop"
-  ) |>
-  ggplot(aes(x = Lokasi, y = Produk, fill = Utilization)) +
-  geom_tile() +
-  geom_text(aes(label = paste0(round(Utilization * 100), "%"))) +
-  labs(
-    title = "Capacity Utilization by Location",
-    subtitle = "Selected scenario",
-    x = NULL, y = NULL
-  ) +
-  theme_minimal()
+  summarise(Utilization = sum(ScenarioDemand) / sum(Capacity), .groups = "drop")
+
+ggplot(utilization, aes(Lokasi, Produk, fill = Utilization)) +
+  geom_tile(color = COLORS$white, linewidth = .8) +
+  geom_text(aes(label = paste0(round(Utilization * 100), "%")), color = COLORS$navy, fontface = "bold") +
+  scale_fill_gradient(low = "#EEF2FF", high = COLORS$aqua, labels = scales::percent, name = "Utilization") +
+  labs(title = "Capacity Utilization by Location", subtitle = "Product and location utilization | Base scenario", x = NULL, y = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+        plot.subtitle = element_text(size = 10, color = COLORS$text),
+        panel.grid = element_blank(), legend.position = "bottom")
 ```
 
 ![Capacity Utilization by Location](output/04_capacity_utilization_heatmap.png)
@@ -300,27 +340,24 @@ Menganalisis utilization berdasarkan **Product × Location**.
 library(dplyr)
 library(ggplot2)
 
-demand_final |>
+COLORS <- list(aqua = "#16B8A6", coral = "#F26B5E", navy = "#253B6E", text = "#334155")
+risk <- demand_final |>
+  filter(Scenario == "Base") |>
   group_by(SKU) |>
   summarise(Shortage = sum(pmax(-CapacityGap, 0)), .groups = "drop") |>
   arrange(desc(Shortage)) |>
-  mutate(CumPct = cumsum(Shortage) / sum(Shortage) * 100) |>
-  ggplot(aes(x = reorder(SKU, Shortage), y = Shortage)) +
-  geom_col() +
-  geom_line(
-    aes(y = CumPct / 100 * max(Shortage), group = 1),
-    linewidth = 1
-  ) +
-  geom_point(
-    aes(y = CumPct / 100 * max(Shortage)),
-    size = 3
-  ) +
-  labs(
-    title = "SKU Capacity Risk Pareto",
-    subtitle = "SKUs contributing to production shortage",
-    x = NULL, y = "Shortage Units"
-  ) +
-  theme_minimal()
+  mutate(CumPct = if (sum(Shortage) > 0) cumsum(Shortage) / sum(Shortage) * 100 else 0)
+max_shortage <- max(risk$Shortage, 1)
+
+ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
+  geom_col(fill = COLORS$coral, width = .7) +
+  geom_line(aes(y = CumPct / 100 * max_shortage, group = 1, color = "Cumulative %"), linewidth = 1) +
+  geom_point(aes(y = CumPct / 100 * max_shortage, color = "Cumulative %"), size = 2.5) +
+  scale_color_manual(values = c("Cumulative %" = COLORS$aqua), name = NULL) +
+  labs(title = "SKU Capacity Risk Pareto", subtitle = "Shortage contribution by SKU | Base scenario", x = NULL, y = "Shortage Units") +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+        plot.subtitle = element_text(size = 10, color = COLORS$text), legend.position = "bottom")
 ```
 
 ![SKU Capacity Risk Pareto](output/05_sku_capacity_risk_pareto.png)
@@ -338,91 +375,37 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
-# Historical data
-df <- demand_final |>
+COLORS <- list(navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6", sky = "#8EC5FC", slate = "#64748B", text = "#334155", white = "#FFFFFF")
+monthly <- demand_final |>
+  filter(Scenario == "Base") |>
   group_by(TahunBulan) |>
-  summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
+  summarise(Demand = sum(ScenarioDemand), Capacity = sum(Capacity), .groups = "drop") |>
   arrange(TahunBulan)
 
-# 3-month moving average
-df <- df |>
-  mutate(
-    Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3
-  )
-
-# 12-Month Forecast
-future <- data.frame(
-  TahunBulan = seq(
-    max(df$TahunBulan) %m+% months(1),
-    max(df$TahunBulan) %m+% months(12),
-    by = "month"
-  )
-)
-
-future$Forecast <- NA
-
-# Forecast month by month
-for (i in 1:12) {
-  values <- c(
-    tail(df$Demand, 3),
-    future$Forecast[1:(i - 1)]
-  )
-
-  future$Forecast[i] <- mean(
-    tail(values, 3),
-    na.rm = TRUE
-  )
+df <- monthly |>
+  mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
+future <- tibble(TahunBulan = seq(max(df$TahunBulan) %m+% months(1), max(df$TahunBulan) %m+% months(12), by = "month"), Forecast = NA_real_)
+for (i in seq_len(nrow(future))) {
+  values <- c(tail(df$Demand, 3), future$Forecast[seq_len(i - 1)])
+  future$Forecast[i] <- mean(tail(values, 3), na.rm = TRUE)
 }
-
-# Forecast range
 sd_demand <- sd(df$Demand, na.rm = TRUE)
+future <- future |> mutate(Upper = Forecast + sd_demand, Lower = Forecast - sd_demand)
 
-future <- future |>
-  mutate(
-    Upper = Forecast + sd_demand,
-    Lower = Forecast - sd_demand
-  )
-
-# Chart
 ggplot() +
-  geom_ribbon(
-    data = future,
-    aes(x = TahunBulan, ymin = Lower, ymax = Upper, fill = "Forecast Range"),
-    alpha = 0.2
-  ) +
-  geom_line(
-    data = df,
-    aes(x = TahunBulan, y = Demand, color = "Actual Demand"),
-    linewidth = 1
-  ) +
-  geom_line(
-    data = df,
-    aes(x = TahunBulan, y = Forecast, color = "3-Month Moving Average"),
-    linewidth = 1
-  ) +
-  geom_line(
-    data = future,
-    aes(x = TahunBulan, y = Forecast, color = "12-Month Forecast"),
-    linewidth = 1.3
-  ) +
-  geom_vline(
-    xintercept = max(df$TahunBulan),
-    linetype = 2
-  ) +
-  labs(
-    title = "Demand Forecast Band",
-    subtitle = "Actual demand with 12-month forward forecast",
-    x = NULL, y = "Demand", color = NULL, fill = NULL
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    plot.subtitle = element_text(size = 11),
-    axis.text = element_text(size = 9),
-    axis.title = element_text(size = 11),
-    legend.text = element_text(size = 9),
-    legend.position = "bottom"
-  )
+  geom_ribbon(data = future, aes(TahunBulan, ymin = Lower, ymax = Upper, fill = "Forecast Range"), alpha = .2) +
+  geom_line(data = df |> filter(!is.na(Forecast)), aes(TahunBulan, Forecast, color = "3-Month Moving Average", linetype = "3-Month Moving Average"), linewidth = .95) +
+  geom_line(data = df, aes(TahunBulan, Demand, color = "Actual Demand", linetype = "Actual Demand"), linewidth = 1.1) +
+  geom_line(data = future, aes(TahunBulan, Forecast, color = "12-Month Forecast", linetype = "12-Month Forecast"), linewidth = 1.1) +
+  geom_vline(xintercept = max(df$TahunBulan), linetype = "dotted", color = COLORS$slate) +
+  scale_color_manual(values = c("Actual Demand" = COLORS$navy, "3-Month Moving Average" = COLORS$violet, "12-Month Forecast" = COLORS$aqua), name = NULL) +
+  scale_linetype_manual(values = c("Actual Demand" = "solid", "3-Month Moving Average" = "dashed", "12-Month Forecast" = "dashed"), name = NULL) +
+  scale_fill_manual(values = c("Forecast Range" = COLORS$sky), name = NULL) +
+  labs(title = "Demand Forecast Band", subtitle = "Actual demand and 12-month forward forecast", x = NULL, y = "Demand") +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+        plot.subtitle = element_text(size = 10, color = COLORS$text),
+        legend.position = "bottom")
 ```
 
 ![Demand Forecast Band](output/06_demand_forecast_band.png)
