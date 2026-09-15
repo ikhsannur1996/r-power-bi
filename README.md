@@ -97,7 +97,11 @@ step2 <- dataset |>
     .groups = "drop"
   )
 
-output <- step2
+output <- step2 |>
+  mutate(
+    # Kirim sebagai string YYYY-MM agar Power BI tidak menerima Microsoft.OleDb.Date.
+    TahunBulan = sprintf("%04d-%02d", as.integer(Tahun), as.integer(Bulan))
+  )
 ```
 
 Output utama:
@@ -135,7 +139,11 @@ demand_final <- merge(step2, scenarios) |>
     RevenueImpact = ScenarioValue - DemandValue
   )
 
-output <- demand_final
+output <- demand_final |>
+  mutate(
+    # Pastikan output final juga berupa string YYYY-MM.
+    TahunBulan = sprintf("%04d-%02d", as.integer(Tahun), as.integer(Bulan))
+  )
 ```
 
 Final analytical table:
