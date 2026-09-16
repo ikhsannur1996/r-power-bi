@@ -1,7 +1,7 @@
 # From Demand to Decisions
 ## R-Powered Analytics in Power BI
 
-> **Professional training deck outline** — turning demand uncertainty into capacity, risk, and revenue decisions.
+> **Professional training deck outline** — from R fundamentals to demand, capacity, risk, and revenue decisions.
 
 ---
 
@@ -11,13 +11,67 @@
 
 **R-Powered Analytics in Power BI**
 
-**Subtitle:** A practical demand, capacity, and What-If analysis case study
+A practical learning journey from R fundamentals to interactive business insight.
 
 **Audience:** Business Analysts, Data Analysts, Demand Planners, Operations, and Power BI users
 
+**Duration:** Half-day to one-day workshop
+
 ---
 
-## Slide 2 — Executive Business Question
+## Slide 2 — Learning Journey
+
+```text
+R Fundamentals
+      ↓
+Tidyverse Data Skills
+      ↓
+Power BI Integration
+      ↓
+Demand & Capacity Analysis
+      ↓
+What-If Scenarios
+      ↓
+Forecasting & Business Decisions
+```
+
+### Learning Objectives
+
+- Understand how R and Power BI complement each other.
+- Write basic R, `dplyr`, and `ggplot2` syntax.
+- Prepare and transform demand data.
+- Build What-If scenarios and interpret capacity risk.
+- Deliver an interactive Power BI dashboard.
+
+---
+
+## Slide 3 — R and Power BI Overview
+
+### R: The Analytical Engine
+
+R is used for data preparation, transformation, scenario modeling, custom visualization, and forecasting.
+
+### Power BI: The Decision Platform
+
+Power BI is used for interactive reports, slicers, KPI presentation, business storytelling, and dashboard distribution.
+
+```text
+R prepares and analyzes the data.
+Power BI communicates and operationalizes the insight.
+```
+
+### When to Use Each Tool
+
+| Task | Recommended tool |
+| --- | --- |
+| Data cleaning and transformation | R or Power Query |
+| Advanced analytics and forecasting | R |
+| Interactive dashboard and slicer | Power BI |
+| Executive reporting | Power BI |
+
+---
+
+## Slide 4 — Business Question
 
 > **If demand changes under different scenarios, can production capacity handle it, which products are at risk, and what is the potential revenue impact?**
 
@@ -30,329 +84,7 @@
 
 ---
 
-## Slide 3 — Business Case and Stakeholders
-
-### Business Analyst Role
-
-```text
-Raw Data → Insight → Risk → Decision
-```
-
-| Stakeholder | Decision supported |
-| --- | --- |
-| Demand Planning | Demand pattern and scenario planning |
-| Production Planning | Capacity and production scheduling |
-| Operations | Product and location risk |
-| Finance | Revenue impact |
-| Management | Capacity investment and mitigation |
-
----
-
-## Slide 4 — Analytical Scope
-
-- January 2024 – December 2026
-- 12 SKUs
-- 4 products
-- 2 locations: Jakarta and Bandung
-- Monthly demand and capacity
-- Product attributes: category, flavor, size, and packing
-- Seven scenarios: `-30%` to `+30%`
-
-### Core Measures
-
-```text
-Demand · Capacity · Utilization · Capacity Gap · Revenue Impact
-```
-
----
-
-## Slide 5 — End-to-End Analytical Architecture
-
-```text
-Data Preparation
-      ↓
-Data Transformation
-      ↓
-What-If Scenario Table
-      ↓
-demand_final
-      ↓
-R Visualization & Forecasting
-      ↓
-Power BI Dashboard
-      ↓
-Business Decision
-```
-
-> `demand_final` is the single analytical source for Power BI.
-
----
-
-## Slide 6 — R and Power BI Technology Stack
-
-| Tool | Role |
-| --- | --- |
-| R | Flexible data preparation, analysis, visualization, and forecasting |
-| tidyverse | Data import, manipulation, tidying, and visualization |
-| lubridate | Date operations and forecasting periods |
-| scales | Business-friendly number and percentage labels |
-| Power BI | Interactive slicers, reporting, and decision communication |
-
-```r
-install.packages(c("tidyverse", "lubridate", "scales"))
-
-library(tidyverse)
-library(lubridate)
-library(scales)
-```
-
----
-
-## Slide 7 — Data Preparation and Transformation
-
-### Key Rule
-
-Use the existing monthly date column `Tanggal`. Do not create an additional `TahunBulan` column.
-
-```r
-library(tidyverse)
-
-step2 <- dataset |>
-  mutate(DemandValue = Permintaan * Harga) |>
-  group_by(
-    Tanggal, Tahun, Bulan, NamaBulan, SKU, Produk,
-    Kategori, Rasa, Ukuran, Packing, Lokasi
-  ) |>
-  summarise(
-    Demand = sum(Permintaan, na.rm = TRUE),
-    DemandValue = sum(DemandValue, na.rm = TRUE),
-    Capacity = mean(Kapasitas, na.rm = TRUE),
-    Harga = mean(Harga, na.rm = TRUE),
-    .groups = "drop"
-  )
-```
-
----
-
-## Slide 8 — What-If Scenario Analysis
-
-```text
--30% | -20% | -10% | Base | +10% | +20% | +30%
-```
-
-```text
-Scenario Demand = Demand × (1 + Growth)
-Utilization     = Scenario Demand ÷ Capacity
-Capacity Gap    = Capacity − Scenario Demand
-Revenue Impact  = Scenario Value − Demand Value
-```
-
-> What happens to operations and revenue when demand moves away from the Base scenario?
-
----
-
-## Slide 9 — Dynamic Scenario Filter in Power BI
-
-1. Add `Scenario` to a slicer.
-2. Set `Base` as the default selection.
-3. Add required fields to the R Visual Values well.
-4. Allow Power BI to pass filtered data to R.
-
-```r
-library(tidyverse)
-
-selected_scenario <- if ("Scenario" %in% names(dataset)) {
-  selected <- unique(na.omit(as.character(dataset$Scenario)))
-  if (length(selected) == 1) selected else "Base"
-} else {
-  "Base"
-}
-
-visual_data <- dataset |>
-  filter(Scenario == selected_scenario)
-```
-
-**Default:** Base  
-**Dynamic behavior:** changes when the slicer changes.
-
----
-
-## Slide 10 — Visual Analytics with ggplot2
-
-### Suggested Title
-
-> **Make Risk Visible**
-
-### Project Visuals
-
-- Demand Distribution with outliers
-- Monthly Demand Pattern
-- Capacity Utilization Heatmap
-- SKU Capacity Risk Pareto
-- Demand Forecast Band
-
-### Color Language
-
-| Color | Meaning |
-| --- | --- |
-| Navy | Demand or primary metric |
-| Aqua | Available capacity or positive status |
-| Coral | Production shortage or risk |
-| Violet | Moving average |
-| Sky blue | Forecast range |
-| Slate | Benchmark or reference line |
-
----
-
-## Slide 11 — Power BI R Visual
-
-### Suggested Title
-
-> **Turn R Analysis into an Interactive Dashboard**
-
-### Power BI Configuration
-
-1. Add `Scenario` to a slicer.
-2. Set `Base` as the default selection.
-3. Add required fields to the R Visual Values well.
-4. Use the filtered `dataset` object in the R script.
-5. Keep the visual code free from a hard-coded `Scenario == "Base"` filter.
-
-```r
-library(tidyverse)
-
-selected_scenario <- if ("Scenario" %in% names(dataset)) {
-  selected <- unique(na.omit(as.character(dataset$Scenario)))
-  if (length(selected) == 1) selected else "Base"
-} else {
-  "Base"
-}
-
-visual_data <- dataset |>
-  filter(Scenario == selected_scenario)
-```
-
----
-
-## Slide 12 — Forecasting
-
-### Suggested Title
-
-> **Look Ahead: From Historical Demand to Future Planning**
-
-```r
-library(tidyverse)
-library(lubridate)
-
-monthly <- visual_data |>
-  group_by(Tanggal) |>
-  summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
-  arrange(Tanggal)
-
-monthly <- monthly |>
-  mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
-```
-
-Forecast results support production scheduling, capacity planning, inventory planning, revenue planning, and risk mitigation.
-
----
-
-## Slide 13 — Capstone Business Challenge
-
-> **Can the business handle a 20% increase in demand next quarter?**
-
-### Participant Tasks
-
-1. Select the `+20%` scenario.
-2. Compare demand with capacity.
-3. Identify risky products or SKUs.
-4. Estimate utilization and revenue impact.
-5. Review the demand forecast.
-6. Present a recommendation in Power BI.
-
-### Expected Deliverables
-
-- Prepared analytical table
-- Scenario analysis
-- Risk visualization
-- Forecast visualization
-- Management recommendation
-
----
-
-## Slide 14 — Management Recommendation
-
-### Possible Actions
-
-- Increase production capacity.
-- Reallocate capacity across locations.
-- Prioritize high-value SKUs.
-- Adjust production schedules.
-- Monitor demand before investing in new capacity.
-
-### Recommendation Structure
-
-```text
-Finding → Business Impact → Recommended Action → Expected Outcome
-```
-
----
-
-## Slide 15 — Key Takeaways and Next Steps
-
-### Key Takeaways
-
-1. A clear business question guides the analysis.
-2. `Tanggal` remains the single date field.
-3. `demand_final` connects demand, capacity, scenarios, risk, and revenue.
-4. Power BI slicers make scenario analysis interactive.
-5. Visuals should support decisions, not only display data.
-6. Forecasting connects historical demand with future planning.
-
-### Next Steps
-
-- Connect the model to actual production data.
-- Add inventory and lead-time metrics.
-- Improve forecasting with advanced models.
-- Add automated refresh and data quality checks.
-- Deploy the dashboard for management decision-making.
-
-### References
-
-- [Main Project README](../README.md)
-
----
-
-## Slide 16 — R and Power BI Overview
-
-### R: The Analytical Engine
-
-R is used for:
-
-- Data preparation
-- Statistical analysis
-- Scenario modeling
-- Custom visualization
-- Forecasting
-
-### Power BI: The Decision Platform
-
-Power BI is used for:
-
-- Interactive reports
-- Slicers and filters
-- KPI presentation
-- Business storytelling
-- Dashboard distribution
-
-```text
-R prepares and analyzes the data.
-Power BI communicates and operationalizes the insight.
-```
-
----
-
-## Slide 17 — Basic R Syntax
+## Slide 5 — Basic R Syntax
 
 ### Core Concepts
 
@@ -371,7 +103,6 @@ summary_table <- tibble(
   Demand = c(12000, 15000)
 )
 
-# Inspect data
 head(summary_table)
 str(summary_table)
 summary(summary_table)
@@ -391,7 +122,7 @@ is.na(x)
 
 ---
 
-## Slide 18 — Basic `dplyr` Syntax
+## Slide 6 — Basic `dplyr` Syntax
 
 ### The Core Verbs
 
@@ -419,15 +150,13 @@ sales |>
   )
 ```
 
-### Mental Model
-
 ```text
 select → filter → mutate → group_by → summarise → arrange
 ```
 
 ---
 
-## Slide 19 — Basic `ggplot2` Syntax
+## Slide 7 — Basic `ggplot2` Syntax
 
 ### Grammar of Graphics
 
@@ -440,30 +169,275 @@ sales_summary <- sales |>
 
 ggplot(sales_summary, aes(x = Produk, y = Demand, fill = Produk)) +
   geom_col() +
-  labs(
-    title = "Demand by Product",
-    x = NULL,
-    y = "Demand"
-  ) +
+  labs(title = "Demand by Product", x = NULL, y = "Demand") +
   theme_minimal()
 ```
 
-### Common Geoms in This Project
+### Common Geoms
 
 ```text
-geom_col()       → bar chart
-geom_point()     → scatter plot
-geom_line()      → trend line
-geom_ribbon()    → forecast range
-geom_violin()    → distribution
-geom_boxplot()   → outlier and quartile view
-geom_tile()      → heatmap
-coord_polar()    → circular seasonality chart
+geom_col() · geom_point() · geom_line()
+geom_ribbon() · geom_violin() · geom_boxplot()
+geom_tile() · coord_polar()
 ```
 
 ---
 
-## Slide 20 — Guided Practice and Learning Path
+## Slide 8 — Power BI R Visual Setup
+
+### Configuration Steps
+
+1. Configure the R installation in Power BI Desktop.
+2. Add required fields to the R Visual Values well.
+3. Add `Scenario` to a Power BI slicer.
+4. Set `Base` as the default selection.
+5. Use the filtered `dataset` object in the R script.
+
+### Required Packages
+
+```r
+install.packages(c("tidyverse", "lubridate", "scales"))
+
+library(tidyverse)
+library(lubridate)
+library(scales)
+```
+
+### Common Issue
+
+```text
+could not find function "mutate"
+→ library(tidyverse) is missing in the R script
+---
+
+## Slide 9 — Business Case and Stakeholders
+
+### Business Analyst Role
+
+```text
+Raw Data → Insight → Risk → Decision
+```
+
+| Stakeholder | Decision supported |
+| --- | --- |
+| Demand Planning | Demand pattern and scenario planning |
+| Production Planning | Capacity and production scheduling |
+| Operations | Product and location risk |
+| Finance | Revenue impact |
+| Management | Capacity investment and mitigation |
+
+---
+
+## Slide 10 — Data Scope and Architecture
+
+### Dataset Scope
+
+- January 2024 – December 2026
+- 12 SKUs, 4 products, and 2 locations
+- Monthly demand and capacity
+- Product attributes: category, flavor, size, and packing
+- Seven demand scenarios
+
+### Analytical Architecture
+
+```text
+Data Preparation
+      ↓
+Data Transformation
+      ↓
+What-If Scenario Table
+      ↓
+demand_final
+      ↓
+Visualization & Forecasting
+      ↓
+Power BI Dashboard
+```
+
+> `demand_final` is the single analytical source for Power BI.
+
+---
+
+## Slide 11 — Data Preparation and Transformation
+
+### Key Rule
+
+Use the existing monthly date column `Tanggal`. Do not create an additional `TahunBulan` column.
+
+```r
+library(tidyverse)
+
+step2 <- dataset |>
+  mutate(DemandValue = Permintaan * Harga) |>
+  group_by(
+    Tanggal, Tahun, Bulan, NamaBulan, SKU, Produk,
+    Kategori, Rasa, Ukuran, Packing, Lokasi
+  ) |>
+  summarise(
+    Demand = sum(Permintaan, na.rm = TRUE),
+    DemandValue = sum(DemandValue, na.rm = TRUE),
+    Capacity = mean(Kapasitas, na.rm = TRUE),
+    Harga = mean(Harga, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+output <- step2
+```
+
+### Quality Checks
+
+- Row count after aggregation
+- Date type on `Tanggal`
+- Missing values
+- Distribution of demand and capacity
+
+---
+
+## Slide 12 — What-If Scenario Analysis
+
+```text
+-30% | -20% | -10% | Base | +10% | +20% | +30%
+```
+
+```text
+Scenario Demand = Demand × (1 + Growth)
+Utilization     = Scenario Demand ÷ Capacity
+Capacity Gap    = Capacity − Scenario Demand
+Revenue Impact  = Scenario Value − Demand Value
+```
+
+### Business Interpretation
+
+```text
+Capacity Gap > 0  → Available Capacity
+Capacity Gap = 0  → Fully Utilized
+Capacity Gap < 0  → Production Shortage
+```
+
+> What happens to operations and revenue when demand moves away from the Base scenario?
+
+---
+
+## Slide 13 — Dynamic Scenario Filter in Power BI
+
+### R Visual Pattern
+
+```r
+library(tidyverse)
+
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  selected <- unique(na.omit(as.character(dataset$Scenario)))
+  if (length(selected) == 1) selected else "Base"
+} else {
+  "Base"
+}
+
+visual_data <- dataset |>
+  filter(Scenario == selected_scenario)
+```
+
+**Default:** Base  
+**Dynamic behavior:** the visual follows the Power BI slicer selection.
+
+---
+
+## Slide 14 — Visual Analytics with ggplot2
+
+### Design Principles
+
+- Use color to communicate business status.
+- Keep legends meaningful and concise.
+- Titles should answer business questions.
+- Use consistent colors across all visuals.
+
+### Project Visuals
+
+- Demand Distribution with outliers
+- Monthly Demand Pattern
+- Capacity Utilization Heatmap
+- SKU Capacity Risk Pareto
+- Demand Forecast Band
+
+### Color Language
+
+| Color | Meaning |
+| --- | --- |
+| Navy | Demand or primary metric |
+| Aqua | Available capacity or positive status |
+| Coral | Production shortage or risk |
+| Violet | Moving average |
+| Sky blue | Forecast range |
+| Slate | Benchmark or reference line |
+---
+
+## Slide 15 — Forecasting
+
+### Forecast Method
+
+- Historical demand aggregated by `Tanggal`
+- Three-month moving average
+- Recursive 12-month forecast
+- Forecast range based on demand variability
+
+```r
+library(tidyverse)
+library(lubridate)
+
+monthly <- visual_data |>
+  group_by(Tanggal) |>
+  summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
+  arrange(Tanggal)
+
+monthly <- monthly |>
+  mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
+```
+
+Forecast results support production scheduling, capacity planning, inventory planning, revenue planning, and risk mitigation.
+
+---
+
+## Slide 16 — Capstone Business Challenge
+
+> **Can the business handle a 20% increase in demand next quarter?**
+
+### Participant Tasks
+
+1. Select the `+20%` scenario.
+2. Compare demand with capacity.
+3. Identify risky products or SKUs.
+4. Estimate utilization and revenue impact.
+5. Review the demand forecast.
+6. Present a recommendation in Power BI.
+
+### Expected Deliverables
+
+- Prepared analytical table
+- Scenario analysis
+- Risk visualization
+- Forecast visualization
+- Management recommendation
+
+---
+
+## Slide 17 — Management Recommendation
+
+### Possible Actions
+
+- Increase production capacity.
+- Reallocate capacity across locations.
+- Prioritize high-value SKUs.
+- Adjust production schedules.
+- Monitor demand before investing in new capacity.
+
+### Recommendation Structure
+
+```text
+Finding → Business Impact → Recommended Action → Expected Outcome
+```
+
+---
+
+## Slide 18 — Guided Practice
 
 ### Practice Sequence
 
@@ -486,16 +460,39 @@ coord_polar()    → circular seasonality chart
 - Scenario selection changes the insight.
 - Recommendation is supported by evidence.
 
-### Continue Learning
+---
+
+## Slide 19 — Key Takeaways and Next Steps
+
+### Key Takeaways
+
+1. A clear business question guides the analysis.
+2. `Tanggal` remains the single date field.
+3. `demand_final` connects demand, capacity, scenarios, risk, and revenue.
+4. Power BI slicers make scenario analysis interactive.
+5. Visuals should support decisions, not only display data.
+6. Forecasting connects historical demand with future planning.
+
+### Next Steps
+
+- Connect the model to actual production data.
+- Add inventory and lead-time metrics.
+- Improve forecasting with advanced models.
+- Add automated refresh and data quality checks.
+- Deploy the dashboard for management decision-making.
+
+---
+
+## Slide 20 — References and Closing
+
+### Reference Materials
 
 - [Main Project README](../README.md)
 - [R Basics](../BASICR.MD)
 - [R Cheat Sheet](../CHEATSEET.MD)
 - [Cheat Sheet PDFs](../cheatsheet/)
 
-> **Final message:** Better code creates better analysis. Better analysis creates better decisions.
+### Closing Message
 
-- [R Basics](../BASICR.MD)
-- [R Cheat Sheet](../CHEATSEET.MD)
-- [Cheat Sheet PDFs](../cheatsheet/)
-
+> **Better code creates better analysis. Better analysis creates better decisions.**
+```
