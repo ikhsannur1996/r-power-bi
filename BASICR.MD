@@ -6,7 +6,7 @@
 > Panduan ini menyediakan fondasi R lengkap untuk project **Demand & Capacity What-If Analysis**, termasuk data preparation, transformation, visualization, forecasting, dan Power BI R Visual.
 >
 > 1. **Basic R** — pengenalan R, RStudio, sintaks dasar, tipe data, vektor, fungsi, dan logika;
-> 2. **Data Manipulation** — membaca data, membersihkan data, dan mengolah data dengan `dplyr`;
+> 2. **Data Manipulation** — membuat data latihan (generate), membersihkan data, dan mengolah data dengan `dplyr`;
 > 3. **Data Visualization** — visualisasi data dengan `ggplot2` dari grafik sederhana hingga multi-variabel.
 
 ---
@@ -32,7 +32,8 @@ Basic R
   -> Fungsi & logika
 
 Data Manipulation
-  -> Membaca data (CSV)
+  -> Membuat data latihan (generate, tanpa CSV)
+  -> Membaca data dari file (opsional)
   -> Memahami struktur data
   -> dplyr: select, filter, mutate, arrange, group_by, summarise
   -> Pipeline dan cleaning lengkap
@@ -53,7 +54,7 @@ Setelah menyelesaikan **R Basics**, Anda diharapkan mampu:
 1. Menginstal dan menjalankan R serta RStudio.
 2. Membuat objek, vektor, dan data frame.
 3. Menggunakan operator, fungsi, dan logika dasar R.
-4. Membaca file CSV dan memahami struktur data.
+4. Membuat data latihan dengan kode R (generate) dan memahami struktur data.
 5. Melakukan cleaning dan transformasi data dengan `dplyr`.
 6. Membuat grafik dasar hingga multi-variabel dengan `ggplot2`.
 7. Menyimpan hasil analisis (data bersih, ringkasan, dan grafik) untuk proyek lanjutan.
@@ -373,13 +374,69 @@ calculate_defect_rate_safe(5, 0)     # NA
 
 ## 6. Data Manipulation — Membaca dan Memahami Data
 
-### 6.1 Membaca CSV
+### 6.1 Membuat Data Latihan `quality_inspection` (generate, tanpa CSV)
 
+Data latihan dibuat langsung dengan kode R — tidak memerlukan file eksternal. `InspectionDate` dibuat sebagai deret tanggal sungguhan (`Date`), sehingga langsung siap untuk filter, grouping, dan visualisasi time-series:
 
 ```r
-quality <- read.csv("quality_inspection.csv", stringsAsFactors = FALSE)
+library(tidyverse)
+
+set.seed(2026)  # agar data acak selalu sama setiap dijalankan (reproducible)
+
+n_rows <- 90  # 15 hari x 3 lini x 2 shift
+
+quality <- tibble(
+  InspectionDate = rep(
+    seq(as.Date("2026-07-01"), by = "day", length.out = 15),
+    times = 6
+  ),
+  Line = rep(rep(c("A", "B", "C"), each = 5), times = 6),
+  Shift = rep(c("Pagi", "Siang"), times = 45),
+  Product = sample(c("Bracket", "Housing", "Cover", "Shaft"), n_rows, replace = TRUE),
+  Inspected = sample(80:150, n_rows, replace = TRUE),
+  CycleTimeSec = round(rnorm(n_rows, mean = 45, sd = 8)),
+  DefectType = sample(
+    c("NONE", "SCRATCH", "DENT", "CRACK"),
+    n_rows,
+    replace = TRUE,
+    prob = c(0.55, 0.20, 0.15, 0.10)
+  )
+) |>
+  mutate(
+    Defect = pmin(rpois(n_rows, lambda = Inspected * 0.04), Inspected),
+    DefectType = case_when(
+      Defect == 0 ~ "NONE",
+      DefectType == "NONE" ~ "SCRATCH",
+      TRUE ~ DefectType
+    )
+  )
 ```
 
+Fungsi pembentuk data:
+
+| Fungsi | Kegunaan |
+| --- | --- |
+| `set.seed(2026)` | mengunci hasil random agar data sama setiap dijalankan |
+| `seq(as.Date(...), by = "day", length.out = 15)` | deret 15 tanggal bertipe `Date` |
+| `rep()` | mengulang nilai (tanggal, lini, shift) sampai 90 baris |
+| `sample()` | memilih nilai acak dari daftar pilihan |
+| `rnorm()` | angka acak berdistribusi normal (cycle time) |
+| `rpois()` | jumlah defect acak (distribusi Poisson) |
+| `pmin()` | batas atas agar `Defect` tidak melebihi `Inspected` |
+| `case_when()` | logika multi-kondisi untuk label `DefectType` |
+
+Catatan penting:
+
+- `InspectionDate` sudah bertipe `Date` sejak dibuat — tidak perlu konversi.
+- Data generator tidak mengandung `NA`; latihan menangani `NA` pada bab 7 tetap berguna untuk data nyata.
+- **Seluruh chart pada bab 8 dirender dari data generator ini** (`set.seed(2026)`), jadi hasil Anda akan persis sama dengan gambar yang ditampilkan.
+
+> Pada pekerjaan nyata data biasanya berasal dari file. Jika tersedia `quality_inspection.csv`, cukup ganti generator di atas dengan:
+>
+> ```r
+> quality <- read.csv("quality_inspection.csv", stringsAsFactors = FALSE)
+> ```
+>
 > `stringsAsFactors = FALSE` membuat kolom teks dibaca sebagai `character`, bukan otomatis menjadi `factor`.
 
 ### 6.2 Melihat struktur dan isi data
@@ -711,6 +768,10 @@ ggplot(data = quality_clean, aes(x = Line, y = DefectRate)) +
   geom_col()
 ```
 
+Hasil chart:
+
+![Struktur dasar ggplot2](images/basicr/01_basic_bar.png)
+
 Anatomi:
 
 - `data` → data frame yang dipakai;
@@ -738,6 +799,10 @@ ggplot(summary_by_line, aes(x = Line, y = DefectRate)) +
   labs(title = "Defect rate per lini", x = "Lini", y = "Defect rate")
 ```
 
+Hasil chart:
+
+![Bar chart dengan format persentase](images/basicr/02_bar_percent.png)
+
 ### 8.3 Line chart (tren per tanggal)
 
 ```r
@@ -757,6 +822,10 @@ ggplot(trend_by_date, aes(x = InspectionDate, y = DefectRate)) +
   labs(title = "Tren defect rate", x = "Tanggal", y = "Defect rate")
 ```
 
+Hasil chart:
+
+![Line chart tren defect rate](images/basicr/03_line_trend.png)
+
 ### 8.4 Scatter plot (hubungan dua variabel numerik)
 
 ```r
@@ -769,6 +838,10 @@ ggplot(quality_clean, aes(x = CycleTimeSec, y = DefectRate, color = Line)) +
   )
 ```
 
+Hasil chart:
+
+![Scatter plot berwarna per lini](images/basicr/04_scatter_color.png)
+
 Tambahkan garis kecenderungan:
 
 ```r
@@ -777,6 +850,10 @@ ggplot(quality_clean, aes(x = CycleTimeSec, y = DefectRate)) +
   geom_smooth(method = "lm", se = TRUE) +
   labs(title = "Kecenderungan cycle time dan defect rate")
 ```
+
+Hasil chart:
+
+![Scatter plot dengan garis kecenderungan](images/basicr/05_scatter_smooth.png)
 
 ### 8.5 Boxplot (sebaran per kelompok)
 
@@ -790,6 +867,10 @@ ggplot(quality_clean, aes(x = Line, y = CycleTimeSec, fill = Line)) +
   ) +
   theme_minimal()
 ```
+
+Hasil chart:
+
+![Boxplot cycle time per lini](images/basicr/06_boxplot.png)
 
 **Cara membaca boxplot:**
 
@@ -821,6 +902,10 @@ ggplot(quality_clean, aes(x = InspectionDate, y = DefectRate, color = Line)) +
   theme(legend.position = "bottom")
 ```
 
+Hasil chart:
+
+![Grafik multi-variabel warna dan ukuran](images/basicr/07_multi_variable.png)
+
 Facet (multi-panel) untuk banyak lini:
 
 ```r
@@ -830,6 +915,10 @@ ggplot(quality_clean, aes(x = InspectionDate, y = DefectRate)) +
   facet_wrap(~ Line) +
   theme_minimal()
 ```
+
+Hasil chart:
+
+![Facet multi-panel per lini](images/basicr/08_facet.png)
 
 ### 8.7 Labels, theme, dan simpan grafik
 
@@ -889,8 +978,8 @@ library(lubridate)
 library(ggplot2)
 library(scales)
 
-# 1. Membaca
-quality <- read.csv("quality_inspection.csv", stringsAsFactors = FALSE)
+# 1. Data latihan — dibuat dengan generator di section 6.1
+#    (objek `quality` sudah tersedia di environment)
 
 # 2. Cleaning + metrik
 quality_clean <- quality |>
@@ -991,7 +1080,7 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 
 - [ ] R dan RStudio terpasang.
 - [ ] Package `tidyverse`, `lubridate`, dan `scales` terpasang.
-- [ ] CSV dibaca dan tipe data diperiksa.
+- [ ] Data latihan digenerate (section 6.1) dan tipe data diperiksa.
 - [ ] Missing values diperiksa (`colSums(is.na())`).
 - [ ] Data invalid difilter.
 - [ ] Kolom `DefectRate` dibuat.
@@ -1029,10 +1118,8 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 ### 15.2 Pola sintaks yang paling sering dipakai
 
 ```r
-# Pola 1: baca -> bersihkan -> metrik
-df <- read.csv("quality_inspection.csv", stringsAsFactors = FALSE)
-
-clean <- df |>
+# Pola 1: data latihan -> bersihkan -> metrik
+clean <- quality |>
   mutate(
     InspectionDate = as.Date(InspectionDate),
     DefectRate = Defect / Inspected
