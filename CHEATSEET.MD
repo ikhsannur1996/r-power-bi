@@ -1,10 +1,13 @@
-# R Cheat Sheet — Demand & Capacity Project
+# R Cheat Sheet — Basic R, tidyverse & ggplot2
 
-> **Navigation:** [Main Project README](README.md) · [R Basics](BASICR.MD)
+> **Project navigation:** [Main project README](README.md) · [R Basics](BASICR.MD)
 
-Cheat sheet ini hanya memuat syntax yang digunakan dalam repository **Demand & Capacity What-If Analysis**.
 
-## 1. Setup
+> Satu halaman referensi cepat untuk **menghafal dan memahami sintaks R**. Pasangkan dengan `README.md`. Salin-tempel contoh ini langsung di RStudio dan ubah datanya.
+
+---
+
+## 0. Setup and Packages
 
 ```r
 install.packages(c("tidyverse", "lubridate", "scales"))
@@ -14,151 +17,247 @@ library(lubridate)
 library(scales)
 ```
 
-## 2. Read and Inspect Data
+## 1. Objek, Assignment & Tipe Data
 
 ```r
-dataset <- read_csv("dataset/dataset.csv", show_col_types = FALSE)
+x <- 5                 # assignment pakai <-
+x = 5                  # juga bisa, tapi gunakan <- (konvensi R)
+assign("x", 5)         # fungsi assignment (jarang dipakai)
 
-head(dataset)
-str(dataset)
-summary(dataset)
-nrow(dataset)
-names(dataset)
+class(x)               # "numeric"
+is.numeric(x)          # TRUE / FALSE (cek tipe)
+as.character(x)        # konversi ke character
+as.integer(5.7)        # 5 (membulatkan ke bawah)
+is.na(x)               # cek missing value
+
+# Tipe utama: numeric, integer, character, logical, factor, Date, list
 ```
 
-## 3. Common Data Types
+## 2. Vektor (Vector)
 
 ```r
-as.Date("2024-01-01")
-as.character(x)
-as.numeric(x)
-as.integer(x)
-is.na(x)
+v <- c(1, 2, 3, 4)        # kombinasi (combine)
+s <- seq(1, 10, by = 2)   # 1 3 5 7 9
+r <- rep("A", 3)          # "A" "A" "A"
+n <- 1:10                 # urutan
+
+length(v)
+sum(v)
+mean(v)
+median(v)
+min(v)
+max(v)
+sd(v)
+var(v)
+range(v)
+sort(v)
+rev(v)
+unique(v)
+
+# Operasi vektor bersifat elementwise:
+v + 1
+v * 2
+v > 2
+v %in% c(2, 3)
 ```
 
-## 4. Tidyverse Data Manipulation
+## 3. Indexing (ingat: R mulai dari 1)
 
 ```r
-# Select columns
-sales |> select(Tanggal, SKU, Produk, Permintaan)
+v[1]          # elemen pertama
+v[2:3]        # elemen 2-3
+v[c(1, 4)]    # elemen 1 dan 4
+v[-1]         # semua kecuali elemen 1
+v[v > 2]      # berdasarkan kondisi
+which(v > 2)  # posisi indeks yang memenuhi
+names(v)      # nama elemen (jika ada)
+```
 
-# Filter rows
-sales |> filter(Permintaan > 1000)
+## 4. NA (nilai hilang)
 
-# Create columns
-sales |> mutate(DemandValue = Permintaan * Harga)
+```r
+x <- c(1, NA, 3)
+is.na(x)                 # FALSE TRUE FALSE
+sum(is.na(x))            # jumlah NA
+mean(x, na.rm = TRUE)    # rata-rata tanpa NA
+x[!is.na(x)]             # buang NA
+na.omit(data_frame)      # buang baris ber-NA
+```
 
-# Sort rows
-sales |> arrange(desc(Permintaan))
+## 5. Logika & Kondisi
 
-# Group and summarize
-sales |>
-  group_by(Produk) |>
+```r
+5 > 3 & 5 < 10    # AND  -> TRUE
+5 < 3 | 5 < 10    # OR   -> TRUE
+!(5 > 3)          # NOT  -> FALSE
+5 %in% c(1,5,9)   # membership -> TRUE
+
+if (x > 5) print("big") else print("small")
+ifelse(condition, yes_val, no_val)          # vectorized
+case_when(cond1 ~ val1, .default = val_default)  # dplyr multi-kondisi
+```
+
+## 6. String & Tanggal
+
+```r
+toupper("r")              # "R"
+tolower("R")              # "r"
+nchar("hello")            # 5
+substr("abcdef", 2, 4)    # "bcd"
+trimws("  R  ")           # "R"
+gsub("a","o", "banana")   # "bonono"
+strsplit("a,b,c", ",")    # list
+
+# Tanggal
+as.Date("2026-07-01")              # base
+lubridate::ymd("2026-07-01")       # opsi lain
+year(d)
+month(d)
+day(d)
+wday(d)
+floor_date(d, "month")             # awal bulan
+```
+
+---
+
+## 7. `dplyr` — 5 kata kerja inti (verbs)
+
+| Verb | Fungsi | Contoh |
+| --- | --- | --- |
+| `select()` | pilih kolom | `df |> select(a, b)` atau `select(-c)` |
+| `filter()` | pilih baris | `df |> filter(a > 5)` |
+| `mutate()` | buat/ubah kolom | `df |> mutate(y = a * 2)` |
+| `arrange()` | urutkan | `df |> arrange(desc(y))` |
+| `summarise()` + `group_by()` | ringkas | `df |> group_by(g) |> summarise(m = mean(y))` |
+
+Lain: `distinct()`, `rename()`, `count()`, `left_join()`, `slice_max()`, `slice_head()`.
+
+```r
+# Pipa — baca dari kiri ke kanan
+df |>
+  filter(!is.na(x)) |>
+  mutate(rate = d / i) |>
+  group_by(line) |>
+  summarise(avg = mean(rate), .groups = "drop") |>
+  arrange(desc(avg))
+```
+
+### `group_by()` + `summarise()` — wajib hafal
+
+```r
+df |>
+  group_by(Line, DefectType) |>
   summarise(
-    Demand = sum(Permintaan, na.rm = TRUE),
-    AveragePrice = mean(Harga, na.rm = TRUE),
+    total_inspected = sum(Inspected),
+    total_defect   = sum(Defect),
+    defect_rate    = total_defect / total_inspected,
     .groups = "drop"
   )
 ```
 
-## 5. Prepare and Aggregate
+> 💡 Agregat defect rate = `total_defect/total_inspected`, **bukan** `mean(defect_rate per baris)` — volume antar kelompok berbeda.
+
+---
+
+## 8. `ggplot2` — Formula Inti
 
 ```r
-step2 <- dataset |>
-  mutate(DemandValue = Permintaan * Harga) |>
-  group_by(
-    Tanggal, Tahun, Bulan, NamaBulan, SKU, Produk,
-    Kategori, Rasa, Ukuran, Packing, Lokasi
-  ) |>
-  summarise(
-    Demand = sum(Permintaan, na.rm = TRUE),
-    DemandValue = sum(DemandValue, na.rm = TRUE),
-    Capacity = mean(Kapasitas, na.rm = TRUE),
-    Harga = mean(Harga, na.rm = TRUE),
-    .groups = "drop"
-  )
+ggplot(data = df, aes(x = x, y = y, color = group, fill = group)) +
+  geom_point() +
+  labs(title = "Title", x = "X", y = "Y", color = "Group", fill = "Group") +
+  theme_minimal() +
+  facet_wrap(~ group)
 ```
 
-## 6. What-If Scenario
+### Geom paling sering dipakai
+
+| Geom | Grafik |
+| --- | --- |
+| `geom_col()` | bar chart (data sudah diagregat) |
+| `geom_bar()` | bar chart (hitung otomatis) |
+| `geom_point()` | scatter plot |
+| `geom_line()` | line chart |
+| `geom_smooth(method = "lm")` | garis regresi |
+| `geom_boxplot()` | boxplot |
+| `geom_histogram()` | histogram |
+| `geom_density()` | density curve |
+| `geom_hline(yintercept = ..)` | garis horizontal (target) |
+
+### Aesthetics (aes) — petakan variabel ke visual
 
 ```r
-scenarios <- tibble(
-  Scenario = c("-30%", "-20%", "-10%", "Base", "+10%", "+20%", "+30%"),
-  Growth = c(-0.30, -0.20, -0.10, 0, 0.10, 0.20, 0.30)
-)
-
-demand_final <- crossing(step2, scenarios) |>
-  mutate(
-    ScenarioDemand = Demand * (1 + Growth),
-    ScenarioValue = ScenarioDemand * Harga,
-    Utilization = ScenarioDemand / Capacity,
-    CapacityGap = Capacity - ScenarioDemand,
-    RevenueImpact = ScenarioValue - DemandValue
-  )
+aes(x, y,           # sumbu
+    color = kat,    # warna titik/garis
+    fill   = kat,   # warna isi (bar, boxplot)
+    size   = num,   # ukuran titik
+    shape  = grup,  # bentuk titik
+    group  = grup)  # grup garis (untuk geom_line)
 ```
 
-## 7. Visualization
+### Skala & label
 
 ```r
-ggplot(demand_final, aes(Produk, ScenarioDemand, fill = Produk)) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = .12, fill = "white") +
-  theme_minimal()
+scale_y_continuous(labels = percent_format(accuracy = 0.1))
+scale_y_continuous(labels = comma)        # pemisah ribuan
+scale_y_log10()
+scale_color_viridis_d()
+scale_color_brewer(palette = "Set2")
+coord_flip()
+labs(title, subtitle, x, y, color, fill, size)
+theme_minimal(base_size = 11)
+theme(legend.position = "bottom", axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Common geoms used in this project:
+---
+
+## 9. Simpan Hasil
 
 ```r
-geom_col()
-geom_point()
-geom_line()
-geom_ribbon()
-geom_violin()
-geom_boxplot()
-geom_tile()
-geom_hline()
-geom_vline()
-coord_polar()
+write.csv(df, "nama.csv", row.names = FALSE)     # data
+ggsave("plot.png", plot, width = 8, height = 5, dpi = 300)  # grafik
 ```
 
-## 8. Scenario Filter for Power BI
+---
 
-```r
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
-  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
-} else {
-  "Base"
-}
+## 10. Shortcut RStudio yang Wajib Dikenal
 
-visual_data <- demand_final |>
-  filter(Scenario == selected_scenario)
-```
+| Shortcut (macOS) | Windows/Linux | Fungsi |
+| --- | --- | --- |
+| `Cmd + Enter` | `Ctrl + Enter` | Jalankan baris/seleksi |
+| `Cmd + Shift + Enter` | `Ctrl + Shift + Enter` | Jalankan seluruh skrip |
+| `Alt + -` | `Alt + -` | Menulis `<-` |
+| `Cmd + Shift + C` | `Ctrl + Shift + C` | Komentar/un-comment blok |
+| `Cmd + Shift + M` | `Ctrl + Shift + M` | Menulis pipe `%>%` (config) |
+| `Tab` | `Tab` | Autocomplete |
+| `Cmd + Shift + F10` | `Ctrl + Shift + F10` | Restart R session |
+| `Cmd + L` | `Ctrl + L` | Hapus Console |
+| `View(df)` | `View(df)` | Lihat data frame di viewer |
 
-Atur slicer `Scenario` di Power BI dengan default selection `Base`.
+---
 
-## 9. Forecast
+## 11. Tips & Trik (untuk mengingat sintaks)
 
-```r
-monthly <- visual_data |>
-  group_by(Tanggal) |>
-  summarise(Demand = sum(ScenarioDemand), .groups = "drop") |>
-  arrange(Tanggal)
+1. Selalu mulai skrip dengan `library()` + komentar tujuan.
+2. Satu baris satu operasi per pipa — mudah dibaca & di-debug.
+3. Nama kolom pakai `snake_case_` (garis bawah).
+4. Cek data dulu: `head()`, `str()`, `summary()`, `nrow()`.
+5. `.groups = "drop"` di `summarise()` untuk menghindari grouping tersisa.
+6. `NA` menyebar: jika `mean()` jadi `NA`, tambahkan `na.rm = TRUE`.
+7. Persentase di ggplot: `percent_format(accuracy = 0.1)` dari `scales`.
+8. Agregat defect rate = total ÷ total, bukan rata-rata rate.
+9. `unique()` dan `table()` sebelum `group_by()` agar kategori bersih.
+10. Pipe `|>` membuat urutan eksekusi = urutan bacaan.
+11. `View()`/klik data frame di Environment untuk memeriksa cepat.
+12. Re-run skrip dari atas bila hasil terlihat aneh (environment basi).
+13. Bekerja dengan **New Project** RStudio agar path relatif aman.
+14. Package error → `install.packages("tidyverse")` dulu, baru `library(tidyverse)`.
+15. Plot kosong → cek tipe data kolom (`str()`).
+16. Tanggal selalu `as.Date()`/`ymd()` sebelum dipakai di grafik.
+17. Label tanggal: `format(d, "%d-%b-%Y")`.
+18. `Tab` di RStudio setelah `$` → autocomplete nama kolom.
+19. Angka tak terlihat → curiga character, lakukan `as.numeric()`.
+20. Cek dimensi hilang setelah filter: `nrow()` sebelum dan sesudah.
 
-monthly <- monthly |>
-  mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
-```
+---
 
-## 10. Export
-
-```r
-write_csv(demand_final, "dataset/demand_final.csv")
-ggsave("output/visual.png", width = 10, height = 6, dpi = 150)
-```
-
-## 11. PDF References
-
-- [Base R](cheatsheet/base-r.pdf)
-- [Data Transformation](cheatsheet/data-transformation.pdf)
-- [Data Visualization](cheatsheet/data-visualization.pdf)
-- [RStudio IDE](cheatsheet/rstudio-ide.pdf)
+*Cheatsheet Volume 0 — salin, tempel, dan ingat: `dplyr` + `ggplot2` menyelesaikan hampir semua kebutuhan dasar.*
