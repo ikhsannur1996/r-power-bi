@@ -23,7 +23,7 @@ Power BI Dashboard
 Business Decision
 ```
 
-## 2. Dataset
+## 2. Data Preparation
 
 Synthetic monthly dataset untuk periode **January 2024 – December 2026**, dengan 12 SKU, 4 products, 2 locations, dan beberapa product attributes.
 
@@ -73,7 +73,9 @@ dataset <- expand.grid(
   )
 ```
 
-## 3. Transformation 1 — Prepare & Aggregate Data
+## 3. Data Transformation
+
+### Step 1 — Prepare & Aggregate Data
 
 Transformation ini menggunakan kolom `Tanggal` yang sudah tersedia, menghitung `DemandValue`, dan melakukan agregasi demand tanpa membuat kolom tanggal baru.
 
@@ -111,7 +113,7 @@ Harga
 
 [Download step2_aggregated.csv](dataset/step2_aggregated.csv)
 
-## 4. Transformation 2 — Generate What-If Scenarios
+### Step 2 — Generate What-If Scenarios
 
 Scenario dibuat sebagai **rows**, bukan sebagai banyak scenario columns.
 
@@ -171,9 +173,46 @@ CapacityGap < 0  → Production Shortage
 ```
 
 
-## 5. R Analytics & Visualization
+## 4. Visualization & Forecasting
 
-### Violin Plot — Demand Distribution
+### 1. Scenario Filter for Power BI R Visual
+
+Agar visual mengikuti slicer Power BI tetapi tetap default ke `Base`:
+
+1. Tambahkan kolom `Scenario` dari `demand_final` ke **Slicer**.
+2. Pilih hanya `Base` sebagai default selection pada slicer.
+3. Tambahkan field yang dibutuhkan visual R ke bagian **Values**.
+4. Jangan gunakan `filter(Scenario == "Base")` secara hard-coded pada kode visual.
+
+Kode visual menggunakan pola berikut:
+
+```r
+library(dplyr)
+
+selected_scenario <- if ("Scenario" %in% names(demand_final)) {
+  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+
+visual_data <- demand_final |>
+  filter(Scenario == selected_scenario)
+```
+
+Perilaku visual:
+
+```text
+Slicer = Base          → visual Base
+Slicer = +10%          → visual +10%
+Slicer = +30%          → visual +30%
+Tidak ada filter       → fallback Base
+Multiple scenario      → fallback Base
+```
+
+> Catatan: kode `generate_outputs.R` menghasilkan PNG statis dengan `Base` sebagai scenario default. Slicer dinamis berlaku untuk R Visual yang dijalankan di Power BI dan menerima data terfilter dari Power BI.
+
+### 2. Violin Plot — Demand Distribution
 
 ```r
 library(dplyr)
@@ -210,7 +249,7 @@ ggplot(visual_data, aes(Produk, ScenarioDemand, fill = Produk)) +
 
 Digunakan untuk melihat bentuk distribusi demand.
 
-### Polar Seasonality
+### 3. Polar Seasonality
 
 ```r
 library(dplyr)
@@ -249,7 +288,7 @@ ggplot(seasonality, aes(Bulan, Demand)) +
 
 Menunjukkan pola demand bulanan dan seasonality.
 
-### Capacity Utilization Heatmap
+### 4. Capacity Utilization Heatmap
 
 ```r
 library(dplyr)
@@ -285,7 +324,7 @@ ggplot(utilization, aes(Lokasi, Produk, fill = Utilization)) +
 
 Menganalisis utilization berdasarkan **Product × Location**.
 
-### Pareto — SKU Capacity Risk
+### 5. Pareto — SKU Capacity Risk
 
 ```r
 library(dplyr)
@@ -324,44 +363,10 @@ ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
 
 Mengidentifikasi SKU yang paling berkontribusi terhadap production shortage.
 
-### Dynamic Scenario Slicer untuk R Visual
-
-Agar visual mengikuti slicer Power BI tetapi tetap default ke `Base`:
-
-1. Tambahkan kolom `Scenario` dari `demand_final` ke **Slicer**.
-2. Pilih hanya `Base` sebagai default selection pada slicer.
-3. Tambahkan field yang dibutuhkan visual R ke bagian **Values**.
-4. Jangan gunakan `filter(Scenario == "Base")` secara hard-coded pada kode visual.
-
-Kode visual menggunakan pola berikut:
-
-```r
-library(dplyr)
-
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
-  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
-} else {
-  "Base"
-}
-
-visual_data <- demand_final |>
-  filter(Scenario == selected_scenario)
-```
-
-Perilaku visual:
-
-```text
-Slicer = Base          → visual Base
-Slicer = +10%          → visual +10%
-Slicer = +30%          → visual +30%
-Tidak ada filter       → fallback Base
-Multiple scenario      → fallback Base
-```
-
-> Catatan: kode `generate_outputs.R` menghasilkan PNG statis dengan `Base` sebagai scenario default. Slicer dinamis berlaku untuk R Visual yang dijalankan di Power BI dan menerima data terfilter dari Power BI.
+### 6. Demand Forecast
 
 Forecast menggunakan **3-Month Moving Average** dan **12-Month Forward Forecast**.
+
 
 ```r
 library(dplyr)
@@ -425,7 +430,7 @@ Actual Demand
 Forecast Range
 ```
 
-## 7. Power BI Dashboard
+## 5. Power BI Dashboard
 
 Final table:
 
@@ -484,7 +489,7 @@ SKU Capacity Risk Pareto
 Scenario Slicer
 ```
 
-## 8. Business Framework
+## 6. Business Framework
 
 ```text
 Demand
@@ -512,7 +517,7 @@ Project menjawab:
 
 > **If demand changes under different scenarios, can our production capacity handle it, which SKUs are at risk, and what will be the potential financial impact?**
 
-## 9. Technology Stack
+## 7. Technology Stack
 
 | Technology | Purpose                                                   |
 | ---------- | --------------------------------------------------------- |
@@ -522,7 +527,7 @@ Project menjawab:
 | lubridate  | Date manipulation & forecasting                           |
 | Power BI   | Interactive dashboard                                     |
 
-## 10. Final Output
+## 8. Final Output
 
 ```text
 dataset
