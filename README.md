@@ -23,7 +23,31 @@ Power BI Dashboard
 Business Decision
 ```
 
-## 2. Data Preparation
+## 2. Requirements
+
+Project ini membutuhkan komponen berikut:
+
+| Requirement | Keterangan |
+| --- | --- |
+| R | R 4.x atau versi yang kompatibel dengan Power BI |
+| R packages | `dplyr`, `ggplot2`, `lubridate`, `readr`, `tidyr`, dan `scales` |
+| Power BI Desktop | Untuk menjalankan R Visual, slicer, dan dashboard |
+| R scripting di Power BI | Path R harus dikonfigurasi melalui `File → Options and settings → Options → R scripting` |
+| Dataset | File CSV pada folder `dataset/` |
+| Output visual | File PNG pada folder `output/` |
+
+Install package R jika belum tersedia:
+
+```r
+# Package installation does not require library() calls.
+install.packages(c(
+  "dplyr", "ggplot2", "lubridate", "readr", "tidyr", "scales"
+))
+```
+
+Untuk Power BI Service, R script membutuhkan konfigurasi tambahan berupa On-premises Data Gateway, instalasi R pada mesin gateway, package yang sama, dan akses ke sumber data. Untuk penggunaan paling stabil, import `dataset/demand_final.csv` langsung ke Power BI.
+
+## 3. Data Preparation
 
 Synthetic monthly dataset untuk periode **January 2024 – December 2026**, dengan 12 SKU, 4 products, 2 locations, dan beberapa product attributes.
 
@@ -73,7 +97,7 @@ dataset <- expand.grid(
   )
 ```
 
-## 3. Data Transformation
+## 4. Data Transformation
 
 ### Step 1 — Prepare & Aggregate Data
 
@@ -173,7 +197,7 @@ CapacityGap < 0  → Production Shortage
 ```
 
 
-## 4. Visualization & Forecasting
+## 5. Visualization & Forecasting
 
 ### 1. Scenario Filter for Power BI R Visual
 
@@ -430,7 +454,7 @@ Actual Demand
 Forecast Range
 ```
 
-## 5. Power BI Dashboard
+## 6. Power BI Dashboard
 
 Final table:
 
@@ -489,7 +513,7 @@ SKU Capacity Risk Pareto
 Scenario Slicer
 ```
 
-## 6. Business Framework
+## 7. Business Framework
 
 ```text
 Demand
@@ -517,7 +541,16 @@ Project menjawab:
 
 > **If demand changes under different scenarios, can our production capacity handle it, which SKUs are at risk, and what will be the potential financial impact?**
 
-## 7. Technology Stack
+## 8. R Basics Reference
+
+Gunakan referensi berikut untuk mempelajari dasar-dasar R sebelum menjalankan transformation dan visualisasi:
+
+- [R Basics](BASICR.MD) — referensi sintaks dasar R, object, vector, data frame, function, dan operasi data sederhana.
+- [R Cheat Sheet](CHEATSEET.MD) — ringkasan cepat syntax dan pola umum R yang digunakan dalam project.
+
+Kedua file tersebut dapat dibuka langsung dari GitHub dengan mengklik link di atas.
+
+## 9. Technology Stack
 
 | Technology | Purpose                                                   |
 | ---------- | --------------------------------------------------------- |
@@ -527,7 +560,7 @@ Project menjawab:
 | lubridate  | Date manipulation & forecasting                           |
 | Power BI   | Interactive dashboard                                     |
 
-## 8. Final Output
+## 10. Final Output
 
 ```text
 dataset
