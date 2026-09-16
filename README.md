@@ -8,7 +8,93 @@ End-to-end analytics project menggunakan **R + Power BI** untuk menganalisis dem
 > **Business Question:**  
 > **How does demand uncertainty affect production capacity and revenue?**
 
+## Business Case
+
+### Peran
+
+Anda berperan sebagai **Business Analyst** pada perusahaan consumer goods yang memproduksi beberapa produk makanan dan minuman untuk lokasi operasional di Jakarta dan Bandung.
+
+### Latar Belakang Bisnis
+
+Perusahaan menghadapi perubahan demand bulanan yang dipengaruhi oleh seasonality, product preference, lokasi, dan ketidakpastian pertumbuhan demand. Tim Production Planning perlu menentukan apakah kapasitas produksi yang tersedia masih cukup untuk memenuhi demand pada kondisi normal maupun ketika demand meningkat.
+
+Saat ini, keputusan produksi masih berisiko karena:
+
+- Demand aktual dan kapasitas belum dianalisis dalam satu analytical dataset.
+- Belum ada perbandingan sistematis antara demand dan production capacity.
+- Dampak perubahan demand terhadap utilization, capacity gap, dan revenue belum terlihat jelas.
+- SKU atau produk yang paling berisiko mengalami shortage belum teridentifikasi.
+- Forecast demand belum terhubung langsung dengan perencanaan kapasitas.
+
+### Tujuan Analisis
+
+Sebagai Business Analyst, Anda diminta membangun analisis demand dan capacity yang dapat menjawab pertanyaan bisnis berikut:
+
+> **Jika demand berubah dalam beberapa skenario, apakah kapasitas produksi mampu memenuhinya, produk mana yang berisiko, dan berapa potensi dampaknya terhadap revenue?**
+
+Analisis ini bertujuan untuk:
+
+1. Memahami pola demand bulanan dan product performance.
+2. Membandingkan demand dengan kapasitas produksi.
+3. Mengukur utilization dan capacity gap.
+4. Mengidentifikasi produk atau SKU yang berpotensi mengalami production shortage.
+5. Menguji dampak skenario demand dari `-30%` sampai `+30%`.
+6. Membantu production planning menggunakan demand forecast.
+
+### Stakeholder
+
+| Stakeholder | Kebutuhan keputusan |
+| --- | --- |
+| Demand Planning | Memahami pola demand dan skenario pertumbuhan |
+| Production Planning | Menentukan kebutuhan kapasitas dan jadwal produksi |
+| Operations Manager | Mengidentifikasi lokasi atau produk yang mengalami tekanan kapasitas |
+| Finance | Mengestimasi revenue impact dari perubahan demand |
+| Management | Menentukan prioritas investasi kapasitas dan mitigasi risiko |
+
+### Scope Analisis
+
+Analisis mencakup:
+
+- Periode Januari 2024 sampai Desember 2026
+- 12 SKU
+- 4 produk
+- 2 lokasi: Jakarta dan Bandung
+- Demand dan production capacity bulanan
+- Product attributes seperti kategori, rasa, ukuran, dan packing
+- Scenario demand: `-30%`, `-20%`, `-10%`, `Base`, `+10%`, `+20%`, `+30%`
+
+### KPI Utama
+
+```text
+Demand
+Capacity
+Scenario Demand
+Utilization
+Capacity Gap
+Revenue Impact
+SKU Capacity Risk
+Demand Forecast
+```
+
+### Output yang Diharapkan
+
+Hasil analisis digunakan untuk mendukung keputusan berikut:
+
+```text
+Demand Planning
+      ↓
+Capacity Planning
+      ↓
+Production Planning
+      ↓
+Risk Mitigation
+      ↓
+Revenue Planning
+```
+
 ## 1. Project Flow
+
+
 
 ```text
 Dataset
@@ -504,9 +590,7 @@ RevenueImpact
 
 ```text
 KPI
-Demand vs Capacity
 Polar Seasonality
-SKU Demand
 Capacity Utilization
 Scenario Slicer
 ```
@@ -514,10 +598,9 @@ Scenario Slicer
 ### Page 2 — Risk & Forecast
 
 ```text
-Demand Variability
 Demand Distribution
 SKU Capacity Risk Pareto
-12-Month Forecast
+Demand Forecast
 Scenario Slicer
 ```
 
@@ -569,15 +652,17 @@ PDF reference materials are available in the [`cheatsheet/`](cheatsheet/) folder
 - [RStudio IDE](cheatsheet/rstudio-ide.pdf)
 
 
+## 10. Technology Stack
+
 | Technology | Purpose                                                   |
 | ---------- | --------------------------------------------------------- |
 | R          | Data generation, transformation, analysis & visualization |
-| dplyr      | Data manipulation                                         |
-| ggplot2    | Visualization                                             |
+| tidyverse  | Data manipulation, import, tidying, and visualization     |
 | lubridate  | Date manipulation & forecasting                           |
+| scales     | Number and percentage formatting                          |
 | Power BI   | Interactive dashboard                                     |
 
-## 10. Final Output
+## 11. Final Output
 
 ```text
 dataset
