@@ -558,7 +558,16 @@ Gunakan referensi berikut untuk mempelajari dasar-dasar R sebelum menjalankan tr
 
 Kedua file tersebut dapat dibuka langsung dari GitHub dengan mengklik link di atas.
 
-## 9. Technology Stack
+
+## 9. Cheat Sheet PDF References
+
+PDF reference materials are available in the [`cheatsheet/`](cheatsheet/) folder:
+
+- [Base R](cheatsheet/base-r.pdf)
+- [Data Transformation](cheatsheet/data-transformation.pdf)
+- [Data Visualization](cheatsheet/data-visualization.pdf)
+- [RStudio IDE](cheatsheet/rstudio-ide.pdf)
+
 
 | Technology | Purpose                                                   |
 | ---------- | --------------------------------------------------------- |

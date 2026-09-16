@@ -1160,7 +1160,12 @@ ringkasan |> left_join(harga_produk, by = "Line")
 
 | Berkas/Materi | Lokasi |
 | --- | --- |
-| **Cheatsheet Volume 0 (sintaks cepat)** | [CHEATSEET.MD](CHEATSEET.MD) |
+| PDF reference | [cheatsheet/](cheatsheet/) |
+| Base R | [base-r.pdf](cheatsheet/base-r.pdf) |
+| Data Transformation | [data-transformation.pdf](cheatsheet/data-transformation.pdf) |
+| Data Visualization | [data-visualization.pdf](cheatsheet/data-visualization.pdf) |
+| RStudio IDE | [rstudio-ide.pdf](cheatsheet/rstudio-ide.pdf) |
+
 | Modul Basic R lanjutan (statistik) | `../README_Basic_R.md` |
 | Volume 1 — R Studio | `../Volume 1 - R Studio/README.md` |
 | Volume 2 — Power BI | [Main project README](README.md) |

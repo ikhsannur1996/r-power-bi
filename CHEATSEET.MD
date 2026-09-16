@@ -246,4 +246,9 @@ ggsave("plot.png", plot, width = 8, height = 5, dpi = 300)  # grafik
 
 ---
 
-*Cheatsheet Volume 0 — salin, tempel, dan ingat: `dplyr` + `ggplot2` menyelesaikan hampir semua kebutuhan dasar.*
+## PDF References
+
+- [Base R](cheatsheet/base-r.pdf)
+- [Data Transformation](cheatsheet/data-transformation.pdf)
+- [Data Visualization](cheatsheet/data-visualization.pdf)
+- [RStudio IDE](cheatsheet/rstudio-ide.pdf)
