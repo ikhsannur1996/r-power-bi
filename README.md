@@ -103,7 +103,7 @@ Transformation 1 — Prepare & Aggregate Data
    ↓
 Transformation 2 — Generate What-If Scenarios
    ↓
-demand_final
+dataset
    ↓
 R Visualization & Forecasting
    ↓
@@ -200,7 +200,7 @@ Transformation ini menggunakan kolom `Tanggal` yang sudah tersedia, menghitung `
 ```r
 library(dplyr)
 
-step2 <- dataset |>
+dataset <- dataset |>
   mutate(DemandValue = Permintaan * Harga) |>
   group_by(
     Tanggal, Tahun, Bulan, NamaBulan, SKU, Produk,
@@ -215,7 +215,7 @@ step2 <- dataset |>
   ) |>
   ungroup()
 
-output <- step2
+output <- dataset
 ```
 
 Output utama:
@@ -247,7 +247,7 @@ scenarios <- data.frame(
   Growth = c(-0.30, -0.20, -0.10, 0.00, 0.10, 0.20, 0.30)
 )
 
-demand_final <- merge(step2, scenarios) |>
+dataset <- merge(dataset, scenarios) |>
   mutate(
     ScenarioDemand = Demand * (1 + Growth),
     ScenarioValue = ScenarioDemand * Harga,
@@ -256,16 +256,16 @@ demand_final <- merge(step2, scenarios) |>
     RevenueImpact = ScenarioValue - DemandValue
   )
 
-output <- demand_final
+output <- dataset
 ```
 
 Final analytical table:
 
 ```text
-demand_final
+dataset
 ```
 
-[Download demand_final.csv](dataset/demand_final.csv)
+[Download dataset_dataset.csv](dataset/dataset.csv)
 
 Key metrics:
 
@@ -297,7 +297,7 @@ CapacityGap < 0  → Production Shortage
 
 Agar visual mengikuti slicer Power BI tetapi tetap default ke `Base`:
 
-1. Tambahkan kolom `Scenario` dari `demand_final` ke **Slicer**.
+1. Tambahkan kolom `Scenario` dari `dataset` ke **Slicer**.
 2. Pilih hanya `Base` sebagai default selection pada slicer.
 3. Tambahkan field yang dibutuhkan visual R ke bagian **Values**.
 4. Jangan gunakan `filter(Scenario == "Base")` secara hard-coded pada kode visual.
@@ -307,14 +307,14 @@ Kode visual menggunakan pola berikut:
 ```r
 library(dplyr)
 
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
   if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
 } else {
   "Base"
 }
 
-visual_data <- demand_final |>
+visual_data <- dataset |>
   filter(Scenario == selected_scenario)
 ```
 
@@ -339,13 +339,13 @@ library(ggplot2)
 COLORS <- list(navy = "#253B6E", gold = "#F2B134", white = "#FFFFFF", text = "#334155")
 PRODUCT_COLORS <- c("Product A" = "#3F8EFC", "Product B" = "#6C5CE7", "Product C" = "#16B8A6", "Product D" = "#F26B5E")
 
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
   if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
 } else {
   "Base"
 }
-visual_data <- demand_final |> filter(Scenario == selected_scenario)
+visual_data <- dataset |> filter(Scenario == selected_scenario)
 
 ggplot(visual_data, aes(Produk, ScenarioDemand, fill = Produk)) +
   geom_violin(color = COLORS$white, alpha = .85, trim = FALSE) +
@@ -374,13 +374,13 @@ library(dplyr)
 library(ggplot2)
 
 COLORS <- list(navy = "#253B6E", sky = "#8EC5FC", slate = "#64748B", white = "#FFFFFF", text = "#334155")
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
   if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
 } else {
   "Base"
 }
-visual_data <- demand_final |> filter(Scenario == selected_scenario)
+visual_data <- dataset |> filter(Scenario == selected_scenario)
 
 seasonality <- visual_data |>
   group_by(Bulan) |>
@@ -413,13 +413,13 @@ library(dplyr)
 library(ggplot2)
 
 COLORS <- list(navy = "#253B6E", aqua = "#16B8A6", white = "#FFFFFF", text = "#334155")
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
   if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
 } else {
   "Base"
 }
-visual_data <- demand_final |> filter(Scenario == selected_scenario)
+visual_data <- dataset |> filter(Scenario == selected_scenario)
 
 utilization <- visual_data |>
   group_by(Produk, Lokasi) |>
@@ -449,13 +449,13 @@ library(dplyr)
 library(ggplot2)
 
 COLORS <- list(aqua = "#16B8A6", coral = "#F26B5E", navy = "#253B6E", text = "#334155")
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
   if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
 } else {
   "Base"
 }
-visual_data <- demand_final |> filter(Scenario == selected_scenario)
+visual_data <- dataset |> filter(Scenario == selected_scenario)
 
 risk <- visual_data |>
   group_by(SKU) |>
@@ -492,13 +492,13 @@ library(ggplot2)
 library(lubridate)
 
 COLORS <- list(navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6", sky = "#8EC5FC", slate = "#64748B", text = "#334155", white = "#FFFFFF")
-selected_scenario <- if ("Scenario" %in% names(demand_final)) {
-  scenarios_in_visual <- unique(na.omit(as.character(demand_final$Scenario)))
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
   if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
 } else {
   "Base"
 }
-visual_data <- demand_final |> filter(Scenario == selected_scenario)
+visual_data <- dataset |> filter(Scenario == selected_scenario)
 
 monthly <- visual_data |>
   group_by(Tanggal) |>
@@ -553,7 +553,7 @@ Forecast Range
 Final table:
 
 ```text
-demand_final
+dataset
 ```
 
 digunakan sebagai single source untuk Power BI.
@@ -669,14 +669,14 @@ dataset
    ↓
 step2 (Prepare & Aggregate)
    ↓
-demand_final
+dataset
    ↓
 R Analytics & Forecast
    ↓
 Power BI
 ```
 
-`demand_final` menjadi single analytical dataset yang menggabungkan:
+`dataset` menjadi single analytical dataset yang menggabungkan:
 
 ```text
 Demand
