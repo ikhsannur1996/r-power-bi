@@ -1,5 +1,8 @@
 # Demand & Capacity What-If Analysis
 
+> **Documentation:** [R Basics](BASICR.MD) · [R Cheat Sheet](CHEATSEET.MD)
+
+
 End-to-end analytics project menggunakan **R + Power BI** untuk menganalisis demand, production capacity, What-If scenario, capacity risk, revenue impact, dan demand forecasting.
 
 > **Business Question:**  
@@ -30,7 +33,7 @@ Project ini membutuhkan komponen berikut:
 | Requirement | Keterangan |
 | --- | --- |
 | R | R 4.x atau versi yang kompatibel dengan Power BI |
-| R packages | `dplyr`, `ggplot2`, `lubridate`, `readr`, `tidyr`, dan `scales` |
+| R packages | `tidyverse`, `lubridate`, dan `scales` |
 | Power BI Desktop | Untuk menjalankan R Visual, slicer, dan dashboard |
 | R scripting di Power BI | Path R harus dikonfigurasi melalui `File → Options and settings → Options → R scripting` |
 | Dataset | File CSV pada folder `dataset/` |
@@ -39,13 +42,18 @@ Project ini membutuhkan komponen berikut:
 Install package R jika belum tersedia:
 
 ```r
-# Package installation does not require library() calls.
-install.packages(c(
-  "dplyr", "ggplot2", "lubridate", "readr", "tidyr", "scales"
-))
+# tidyverse mencakup dplyr, ggplot2, readr, tidyr, tibble, dan package inti data analysis.
+install.packages(c("tidyverse", "lubridate", "scales"))
 ```
 
-Untuk Power BI Service, R script membutuhkan konfigurasi tambahan berupa On-premises Data Gateway, instalasi R pada mesin gateway, package yang sama, dan akses ke sumber data. Untuk penggunaan paling stabil, import `dataset/demand_final.csv` langsung ke Power BI.
+```r
+library(tidyverse)
+library(lubridate)
+library(scales)
+```
+
+Gunakan `library(tidyverse)` sebelum menjalankan kode transformation dan visualisasi yang menggunakan `dplyr`, `ggplot2`, `readr`, atau `tidyr`.
+
 
 ## 3. Data Preparation
 

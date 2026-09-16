@@ -1,8 +1,21 @@
-# 📗 CHEATSHEET Volume 0 — Basic R, dplyr & ggplot2
+# R Cheat Sheet — Basic R, tidyverse & ggplot2
+
+> **Project navigation:** [Main project README](README.md) · [R Basics](BASICR.MD)
+
 
 > Satu halaman referensi cepat untuk **menghafal dan memahami sintaks R**. Pasangkan dengan `README.md`. Salin-tempel contoh ini langsung di RStudio dan ubah datanya.
 
 ---
+
+## 0. Setup and Packages
+
+```r
+install.packages(c("tidyverse", "lubridate", "scales"))
+
+library(tidyverse)
+library(lubridate)
+library(scales)
+```
 
 ## 1. Objek, Assignment & Tipe Data
 
@@ -223,7 +236,7 @@ ggsave("plot.png", plot, width = 8, height = 5, dpi = 300)  # grafik
 11. `View()`/klik data frame di Environment untuk memeriksa cepat.
 12. Re-run skrip dari atas bila hasil terlihat aneh (environment basi).
 13. Bekerja dengan **New Project** RStudio agar path relatif aman.
-14. Package error → `install.packages("dplyr")` dulu, baru `library()`.
+14. Package error → `install.packages("tidyverse")` dulu, baru `library(tidyverse)`.
 15. Plot kosong → cek tipe data kolom (`str()`).
 16. Tanggal selalu `as.Date()`/`ymd()` sebelum dipakai di grafik.
 17. Label tanggal: `format(d, "%d-%b-%Y")`.

@@ -1,4 +1,7 @@
-# 📗 README Volume 0 — Basic R: Sintaks, Data Manipulation & Visualisasi
+# R Basics — Foundation, Data Manipulation & Visualization
+
+> **Project guide:** [Main project README](README.md) · [R Cheat Sheet](CHEATSEET.MD)
+
 
 > Proyek ini adalah **Volume 0** — fondasi paling awal dari rangkaian pelatihan *"Insight to Impact"*. Materi di folder ini mencakup tiga pilar dasar R yang menjadi prasyarat untuk Volume 1 (Statistik & Visualisasi dengan RStudio) dan Volume 2 (Power BI):
 >
@@ -15,7 +18,7 @@
 | **Nama proyek** | Volume 0 — Basic R |
 | **Topik materi** | Basic R, Data Manipulation, Data Visualization |
 | **Bahasa** | R, RStudio Desktop |
-| **Package utama** | `dplyr`, `lubridate`, `ggplot2`, `scales` |
+| **Package utama** | `tidyverse`, `lubridate`, `scales` |
 | **Dataset** | `quality_inspection.csv` (latihan inspeksi kualitas) |
 | **Prerequisit** | Tidak diperlukan pengalaman sebelumnya (pemula mutlak) |
 | **Luaran** | Kemampuan dasar menulis kode R, mengolah data, dan membuat grafik sebagai fondasi Volume 1 & 2 |
@@ -60,7 +63,7 @@ Setelah menyelesaikan **Volume 0**, Anda diharapkan mampu:
 
 ---
 
-## 3. Persiapan R dan RStudio
+## 3. Prerequisites and RStudio Setup
 
 ### 3.1 Instalasi
 
@@ -72,21 +75,24 @@ Setelah menyelesaikan **Volume 0**, Anda diharapkan mampu:
 - **R** adalah "mesin" di balik semua analisis.
 - **RStudio** adalah "kokpit" yang membuat kerja jauh lebih nyaman.
 
-### 3.2 Package yang digunakan
+### 3.2 Packages Used in This Project
 
 Paket (package) adalah kumpulan fungsi siap pakai. Instal sekali saja:
 
 ```r
-install.packages(c("dplyr", "lubridate", "ggplot2", "scales"))
+install.packages(c("tidyverse", "lubridate", "scales"))
+
+library(tidyverse)
+library(lubridate)
+library(scales)
 ```
 
 Aktifkan setiap awal sesi:
 
 ```r
-library(dplyr)     # data manipulation
-library(lubridate) # pengolahan tanggal
-library(ggplot2)   # visualisasi
-library(scales)    # format label (persentase, ribuan)
+library(tidyverse) # data manipulation, reading data, and visualization
+library(lubridate) # date handling
+library(scales)    # percentages and number labels
 ```
 
 > Jika muncul pesan `there is no package called ...`, lakukan `install.packages()` terlebih dahulu.
@@ -987,7 +993,7 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 ## 13. Checklist Penyelesaian Volume 0
 
 - [ ] R dan RStudio terpasang.
-- [ ] Package `dplyr`, `lubridate`, `ggplot2`, `scales` terpasang.
+- [ ] Package `tidyverse`, `lubridate`, dan `scales` terpasang.
 - [ ] CSV dibaca dan tipe data diperiksa.
 - [ ] Missing values diperiksa (`colSums(is.na())`).
 - [ ] Data invalid difilter.
@@ -1154,15 +1160,16 @@ ringkasan |> left_join(harga_produk, by = "Line")
 
 | Berkas/Materi | Lokasi |
 | --- | --- |
-| **Cheatsheet Volume 0 (sintaks cepat)** | `CHEATSHEET.md` (di folder ini) |
+| **Cheatsheet Volume 0 (sintaks cepat)** | [CHEATSEET.MD](CHEATSEET.MD) |
 | Modul Basic R lanjutan (statistik) | `../README_Basic_R.md` |
-| Volume 1 — R Studio | `../Volume 1 - R Studio/README.md` dan `CHEATSHEET.md` |
-| Volume 2 — Power BI | `../Volume 2 - Power BI/README.md` dan `CHEATSHEET.md` |
+| Volume 1 — R Studio | `../Volume 1 - R Studio/README.md` |
+| Volume 2 — Power BI | [Main project README](README.md) |
 | Dataset | `../quality_inspection.csv` |
 | Skrip cleaning Power Query | `../quality_inspection_cleaning.R` |
 | Dokumentasi R | <https://cran.r-project.org/> |
-| dplyr dokumentasi | <https://dplyr.tidyverse.org/> |
-| ggplot2 dokumentasi | <https://ggplot2.tidyverse.org/> |
+| tidyverse documentation | <https://www.tidyverse.org/> |
+| dplyr documentation | <https://dplyr.tidyverse.org/> |
+| ggplot2 documentation | <https://ggplot2.tidyverse.org/> |
 
 ---
 
