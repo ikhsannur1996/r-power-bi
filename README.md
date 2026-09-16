@@ -316,6 +316,8 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
 
 visual_data <- dataset |>
   filter(Scenario == selected_scenario)
+
+scenario_label <- paste(selected_scenario, "scenario")
 ```
 
 Perilaku visual:
@@ -326,6 +328,7 @@ Slicer = +10%          → visual +10%
 Slicer = +30%          → visual +30%
 Tidak ada filter       → fallback Base
 Multiple scenario      → fallback Base
+Subtitle label         → mengikuti scenario yang dipilih
 ```
 
 > Catatan: kode `generate_outputs.R` menghasilkan PNG statis dengan `Base` sebagai scenario default. Slicer dinamis berlaku untuk R Visual yang dijalankan di Power BI dan menerima data terfilter dari Power BI.
@@ -346,6 +349,7 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
   "Base"
 }
 visual_data <- dataset |> filter(Scenario == selected_scenario)
+scenario_label <- paste(selected_scenario, "scenario")
 
 ggplot(visual_data, aes(Produk, ScenarioDemand, fill = Produk)) +
   geom_violin(color = COLORS$white, alpha = .85, trim = FALSE) +
@@ -354,7 +358,7 @@ ggplot(visual_data, aes(Produk, ScenarioDemand, fill = Produk)) +
                outlier.color = COLORS$navy, outlier.size = 2.4,
                outlier.stroke = .5) +
   scale_fill_manual(values = PRODUCT_COLORS, guide = "none") +
-  labs(title = "Demand Distribution", subtitle = "Demand shape with outliers highlighted by product", x = NULL, y = "Scenario Demand") +
+  labs(title = "Demand Distribution", subtitle = paste("Demand shape with outliers highlighted by product |", scenario_label), x = NULL, y = "Scenario Demand") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
         plot.subtitle = element_text(size = 10, color = COLORS$text),
@@ -381,6 +385,7 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
   "Base"
 }
 visual_data <- dataset |> filter(Scenario == selected_scenario)
+scenario_label <- paste(selected_scenario, "scenario")
 
 seasonality <- visual_data |>
   group_by(Bulan) |>
@@ -393,7 +398,7 @@ ggplot(seasonality, aes(Bulan, Demand)) +
   scale_fill_manual(values = c("Above Average" = COLORS$navy, "Below Average" = COLORS$sky), name = "Demand Level") +
   scale_linetype_manual(values = c("Monthly Average" = "dashed"), name = NULL) +
   coord_polar() + scale_x_continuous(breaks = 1:12) +
-  labs(title = "Monthly Demand Pattern", subtitle = "Demand compared with monthly average | Base scenario", x = NULL, y = NULL) +
+  labs(title = "Monthly Demand Pattern", subtitle = paste("Demand compared with monthly average |", scenario_label), x = NULL, y = NULL) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
         plot.subtitle = element_text(size = 10, color = COLORS$text),
@@ -420,6 +425,7 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
   "Base"
 }
 visual_data <- dataset |> filter(Scenario == selected_scenario)
+scenario_label <- paste(selected_scenario, "scenario")
 
 utilization <- visual_data |>
   group_by(Produk, Lokasi) |>
@@ -429,7 +435,7 @@ ggplot(utilization, aes(Lokasi, Produk, fill = Utilization)) +
   geom_tile(color = COLORS$white, linewidth = .8) +
   geom_text(aes(label = paste0(round(Utilization * 100), "%")), color = COLORS$navy, fontface = "bold") +
   scale_fill_gradient(low = "#EEF2FF", high = COLORS$aqua, labels = scales::percent, name = "Utilization") +
-  labs(title = "Capacity Utilization by Location", subtitle = "Product and location utilization | Base scenario", x = NULL, y = NULL) +
+  labs(title = "Capacity Utilization by Location", subtitle = paste("Product and location utilization |", scenario_label), x = NULL, y = NULL) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
         plot.subtitle = element_text(size = 10, color = COLORS$text),
@@ -456,6 +462,7 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
   "Base"
 }
 visual_data <- dataset |> filter(Scenario == selected_scenario)
+scenario_label <- paste(selected_scenario, "scenario")
 
 risk <- visual_data |>
   group_by(SKU) |>
@@ -469,7 +476,7 @@ ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
   geom_line(aes(y = CumPct / 100 * max_shortage, group = 1, color = "Cumulative %"), linewidth = 1) +
   geom_point(aes(y = CumPct / 100 * max_shortage, color = "Cumulative %"), size = 2.5) +
   scale_color_manual(values = c("Cumulative %" = COLORS$aqua), name = NULL) +
-  labs(title = "SKU Capacity Risk Pareto", subtitle = "Shortage contribution by SKU | Base scenario", x = NULL, y = "Shortage Units") +
+  labs(title = "SKU Capacity Risk Pareto", subtitle = paste("Shortage contribution by SKU |", scenario_label), x = NULL, y = "Shortage Units") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
         plot.subtitle = element_text(size = 10, color = COLORS$text), legend.position = "bottom")
@@ -497,6 +504,7 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
   "Base"
 }
 visual_data <- dataset |> filter(Scenario == selected_scenario)
+scenario_label <- paste(selected_scenario, "scenario")
 
 df <- visual_data |>
   mutate(
@@ -518,7 +526,7 @@ ggplot(df, aes(Quarter, Rank, group = Produk, color = Produk)) +
   geom_text(aes(label = Rank), size = 3, color = COLORS$navy, fontface = "bold", vjust = -1.15) +
   scale_color_manual(values = PRODUCT_COLORS, name = "Product") +
   scale_y_reverse(breaks = 1:max(df$Rank, na.rm = TRUE), limits = c(max(df$Rank, na.rm = TRUE) + .5, .5)) +
-  labs(title = "Product Demand Ranking", subtitle = "Quarterly ranking based on demand | Base scenario", x = NULL, y = "Rank") +
+  labs(title = "Product Demand Ranking", subtitle = paste("Quarterly ranking based on demand |", scenario_label), x = NULL, y = "Rank") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
         plot.subtitle = element_text(size = 10, color = COLORS$text),
@@ -550,6 +558,7 @@ selected_scenario <- if ("Scenario" %in% names(dataset)) {
 
 visual_data <- if ("Scenario" %in% names(dataset) && !is.na(selected_scenario))
   dataset |> filter(as.character(Scenario)==selected_scenario) else dataset
+scenario_label <- if (!is.na(selected_scenario)) paste(selected_scenario, "scenario") else "all scenarios"
 
 monthly <- visual_data |>
   mutate(Tanggal=as.Date(Tanggal)) |>
@@ -578,7 +587,7 @@ ggplot() +
   scale_color_manual(values=c("Actual Demand"=COLORS$navy,"3-Month Moving Average"=COLORS$violet,"12-Month Forecast"=COLORS$aqua),name=NULL) +
   scale_linetype_manual(values=c("Actual Demand"="solid","3-Month Moving Average"="dashed","12-Month Forecast"="dashed"),name=NULL) +
   scale_fill_manual(values=c("Forecast Range"=COLORS$sky),name=NULL) +
-  labs(title="Demand Forecast Band",subtitle="Actual demand and 12-month forward forecast",x=NULL,y="Demand") +
+  labs(title="Demand Forecast Band",subtitle=paste("Actual demand and 12-month forward forecast |",scenario_label),x=NULL,y="Demand") +
   theme_minimal(base_size=11) +
   theme(plot.title=element_text(face="bold",size=15,color=COLORS$navy),plot.subtitle=element_text(size=10,color=COLORS$text),legend.position="bottom")
 ```
