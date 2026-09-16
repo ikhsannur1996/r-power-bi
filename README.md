@@ -481,7 +481,57 @@ ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
 
 Mengidentifikasi SKU yang paling berkontribusi terhadap production shortage.
 
-### 6. Demand Forecast
+### 6. Bump Chart — Ranking Produk
+
+```r
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+COLORS <- list(navy = "#253B6E", text = "#334155", white = "#FFFFFF")
+PRODUCT_COLORS <- c("Product A" = "#3F8EFC", "Product B" = "#6C5CE7", "Product C" = "#16B8A6", "Product D" = "#F26B5E")
+selected_scenario <- if ("Scenario" %in% names(dataset)) {
+  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
+  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
+} else {
+  "Base"
+}
+visual_data <- dataset |> filter(Scenario == selected_scenario)
+
+df <- visual_data |>
+  mutate(
+    Tahun = year(Tanggal),
+    QuarterNum = quarter(Tanggal),
+    Quarter = paste0(Tahun, " Q", QuarterNum)
+  ) |>
+  group_by(Tahun, QuarterNum, Quarter, Produk) |>
+  summarise(Demand = sum(ScenarioDemand, na.rm = TRUE), .groups = "drop") |>
+  group_by(Quarter) |>
+  mutate(Rank = min_rank(desc(Demand))) |>
+  ungroup() |>
+  arrange(Tahun, QuarterNum)
+df$Quarter <- factor(df$Quarter, levels = unique(df$Quarter))
+
+ggplot(df, aes(Quarter, Rank, group = Produk, color = Produk)) +
+  geom_line(linewidth = 1.2, alpha = .9) +
+  geom_point(size = 4.2, fill = COLORS$white, shape = 21, stroke = 1.3) +
+  geom_text(aes(label = Rank), size = 3, color = COLORS$navy, fontface = "bold", vjust = -1.15) +
+  scale_color_manual(values = PRODUCT_COLORS, name = "Product") +
+  scale_y_reverse(breaks = 1:max(df$Rank, na.rm = TRUE), limits = c(max(df$Rank, na.rm = TRUE) + .5, .5)) +
+  labs(title = "Product Demand Ranking", subtitle = "Quarterly ranking based on demand | Base scenario", x = NULL, y = "Rank") +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
+        plot.subtitle = element_text(size = 10, color = COLORS$text),
+        legend.position = "bottom", panel.grid.major.x = element_blank())
+```
+
+![Product Demand Ranking](output/05_demand_bump_chart.png)
+
+*Garis menghubungkan ranking produk antar kuartil; titik berlabel menunjukkan posisi demand setiap kuartal.*
+
+Menunjukkan perubahan ranking demand antar produk dari kuartal ke kuartal.
+
+### 7. Demand Forecast
 
 Forecast menggunakan **3-Month Moving Average** dan **12-Month Forward Forecast**.
 
@@ -491,51 +541,49 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
-COLORS <- list(navy = "#253B6E", violet = "#6C5CE7", aqua = "#16B8A6", sky = "#8EC5FC", slate = "#64748B", text = "#334155", white = "#FFFFFF")
+COLORS <- list(navy="#253B6E",violet="#6C5CE7",aqua="#16B8A6",sky="#8EC5FC",slate="#64748B",text="#334155",white="#FFFFFF")
+
 selected_scenario <- if ("Scenario" %in% names(dataset)) {
-  scenarios_in_visual <- unique(na.omit(as.character(dataset$Scenario)))
-  if (length(scenarios_in_visual) == 1) scenarios_in_visual else "Base"
-} else {
-  "Base"
-}
-visual_data <- dataset |> filter(Scenario == selected_scenario)
+  s <- unique(na.omit(as.character(dataset$Scenario)))
+  if ("Base" %in% s) "Base" else if (length(s)) s[1] else NA_character_
+} else NA_character_
+
+visual_data <- if ("Scenario" %in% names(dataset) && !is.na(selected_scenario))
+  dataset |> filter(as.character(Scenario)==selected_scenario) else dataset
 
 monthly <- visual_data |>
+  mutate(Tanggal=as.Date(Tanggal)) |>
   group_by(Tanggal) |>
-  summarise(
-    Demand = sum(ScenarioDemand),
-    Capacity = sum(Capacity),
-    .groups = "drop"
-  ) |>
+  summarise(Demand=sum(ScenarioDemand,na.rm=TRUE),Capacity=sum(Capacity,na.rm=TRUE),.groups="drop") |>
   arrange(Tanggal)
 
-df <- monthly |>
-  mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
-future <- tibble(Tanggal = seq(max(df$Tanggal) %m+% months(1), max(df$Tanggal) %m+% months(12), by = "month"), Forecast = NA_real_)
-for (i in seq_len(nrow(future))) {
-  values <- c(tail(df$Demand, 3), future$Forecast[seq_len(i - 1)])
-  future$Forecast[i] <- mean(tail(values, 3), na.rm = TRUE)
+df <- monthly |> mutate(Forecast=(Demand+lag(Demand)+lag(Demand,2))/3)
+
+future <- tibble(Tanggal=seq(max(df$Tanggal,na.rm=TRUE)%m+%months(1),max(df$Tanggal,na.rm=TRUE)%m+%months(12),by="month"),Forecast=NA_real_)
+
+for(i in seq_len(nrow(future))){
+  values <- c(tail(df$Demand,3),future$Forecast[seq_len(i-1)])
+  future$Forecast[i] <- mean(tail(values,3),na.rm=TRUE)
 }
-sd_demand <- sd(df$Demand, na.rm = TRUE)
-future <- future |> mutate(Upper = Forecast + sd_demand, Lower = Forecast - sd_demand)
+
+sd_demand <- sd(df$Demand,na.rm=TRUE)
+future <- future |> mutate(Upper=Forecast+sd_demand,Lower=pmax(Forecast-sd_demand,0))
 
 ggplot() +
-  geom_ribbon(data = future, aes(Tanggal, ymin = Lower, ymax = Upper, fill = "Forecast Range"), alpha = .2) +
-  geom_line(data = df |> filter(!is.na(Forecast)), aes(Tanggal, Forecast, color = "3-Month Moving Average", linetype = "3-Month Moving Average"), linewidth = .95) +
-  geom_line(data = df, aes(Tanggal, Demand, color = "Actual Demand", linetype = "Actual Demand"), linewidth = 1.1) +
-  geom_line(data = future, aes(Tanggal, Forecast, color = "12-Month Forecast", linetype = "12-Month Forecast"), linewidth = 1.1) +
-  geom_vline(xintercept = max(df$Tanggal), linetype = "dotted", color = COLORS$slate) +
-  scale_color_manual(values = c("Actual Demand" = COLORS$navy, "3-Month Moving Average" = COLORS$violet, "12-Month Forecast" = COLORS$aqua), name = NULL) +
-  scale_linetype_manual(values = c("Actual Demand" = "solid", "3-Month Moving Average" = "dashed", "12-Month Forecast" = "dashed"), name = NULL) +
-  scale_fill_manual(values = c("Forecast Range" = COLORS$sky), name = NULL) +
-  labs(title = "Demand Forecast Band", subtitle = "Actual demand and 12-month forward forecast", x = NULL, y = "Demand") +
-  theme_minimal(base_size = 11) +
-  theme(plot.title = element_text(face = "bold", size = 15, color = COLORS$navy),
-        plot.subtitle = element_text(size = 10, color = COLORS$text),
-        legend.position = "bottom")
+  geom_ribbon(data=future,aes(Tanggal,ymin=Lower,ymax=Upper,fill="Forecast Range"),alpha=.2) +
+  geom_line(data=df |> filter(!is.na(Forecast)),aes(Tanggal,Forecast,color="3-Month Moving Average",linetype="3-Month Moving Average"),linewidth=.95) +
+  geom_line(data=df,aes(Tanggal,Demand,color="Actual Demand",linetype="Actual Demand"),linewidth=1.1) +
+  geom_line(data=future,aes(Tanggal,Forecast,color="12-Month Forecast",linetype="12-Month Forecast"),linewidth=1.1) +
+  geom_vline(xintercept=as.numeric(max(df$Tanggal,na.rm=TRUE)),linetype="dotted",color=COLORS$slate) +
+  scale_color_manual(values=c("Actual Demand"=COLORS$navy,"3-Month Moving Average"=COLORS$violet,"12-Month Forecast"=COLORS$aqua),name=NULL) +
+  scale_linetype_manual(values=c("Actual Demand"="solid","3-Month Moving Average"="dashed","12-Month Forecast"="dashed"),name=NULL) +
+  scale_fill_manual(values=c("Forecast Range"=COLORS$sky),name=NULL) +
+  labs(title="Demand Forecast Band",subtitle="Actual demand and 12-month forward forecast",x=NULL,y="Demand") +
+  theme_minimal(base_size=11) +
+  theme(plot.title=element_text(face="bold",size=15,color=COLORS$navy),plot.subtitle=element_text(size=10,color=COLORS$text),legend.position="bottom")
 ```
 
-![Demand Forecast Band](output/05_demand_forecast_band.png)
+![Demand Forecast Band](output/06_demand_forecast_band.png)
 
 *Actual Demand ditampilkan sebagai garis solid; 3-Month Moving Average dan 12-Month Forecast sebagai garis dashed; area biru muda menunjukkan forecast range.*
 
@@ -599,6 +647,7 @@ Scenario Slicer
 
 ```text
 Demand Distribution
+Product Demand Ranking
 SKU Capacity Risk Pareto
 Demand Forecast
 Scenario Slicer

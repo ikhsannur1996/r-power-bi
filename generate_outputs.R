@@ -136,6 +136,27 @@ p4 <- ggplot(risk, aes(reorder(SKU, Shortage), Shortage)) +
   scale_color_manual(values = c("Cumulative %" = COLORS$aqua), name = NULL) + labs(title = "SKU Capacity Risk Pareto", subtitle = "Shortage contribution by SKU | Base scenario", x = NULL, y = "Shortage Units") + theme_project
 save_plot("04_sku_capacity_risk_pareto.png", p4)
 
+# Quarterly product ranking (bump chart).
+bump <- base |>
+  mutate(Tahun = year(Tanggal), QuarterNum = quarter(Tanggal), Quarter = paste0(Tahun, " Q", QuarterNum)) |>
+  group_by(Tahun, QuarterNum, Quarter, Produk) |>
+  summarise(Demand = sum(ScenarioDemand, na.rm = TRUE), .groups = "drop") |>
+  group_by(Quarter) |>
+  mutate(Rank = min_rank(desc(Demand))) |>
+  ungroup() |>
+  arrange(Tahun, QuarterNum)
+bump$Quarter <- factor(bump$Quarter, levels = unique(bump$Quarter))
+p5 <- ggplot(bump, aes(Quarter, Rank, group = Produk, color = Produk)) +
+  geom_line(linewidth = 1.2, alpha = .9) +
+  geom_point(size = 4.2, fill = COLORS$white, shape = 21, stroke = 1.3) +
+  geom_text(aes(label = Rank), size = 3, color = COLORS$navy, fontface = "bold", vjust = -1.15) +
+  scale_color_manual(values = PRODUCT_COLORS, name = "Product") +
+  scale_y_reverse(breaks = 1:max(bump$Rank, na.rm = TRUE), limits = c(max(bump$Rank, na.rm = TRUE) + .5, .5)) +
+  labs(title = "Product Demand Ranking", subtitle = "Quarterly ranking based on demand | Base scenario", x = NULL, y = "Rank") +
+  theme_project + theme(panel.grid.major.x = element_blank())
+save_plot("05_demand_bump_chart.png", p5)
+
+
 
 # Recursive 3-month moving average, projected 12 months forward.
 df <- monthly |> arrange(Tanggal) |> mutate(Forecast = (Demand + lag(Demand) + lag(Demand, 2)) / 3)
@@ -156,7 +177,7 @@ forecast_plot <- ggplot() +
   scale_linetype_manual(values = c("Actual Demand" = "solid", "3-Month Moving Average" = "dashed", "12-Month Forecast" = "dashed"), name = NULL) +
   scale_fill_manual(values = c("Forecast Range" = COLORS$sky), name = NULL) +
   labs(title = "Demand Forecast Band", subtitle = "Actual demand and 12-month forward forecast", x = NULL, y = "Demand") + theme_project
-save_plot("05_demand_forecast_band.png", forecast_plot)
+save_plot("06_demand_forecast_band.png", forecast_plot)
 
 forecast_export <- bind_rows(df |> mutate(Lower = NA_real_, Upper = NA_real_, Type = "Historical"), future |> mutate(Demand = NA_real_, Type = "Forecast")) |> select(Tanggal, Demand, Forecast, Lower, Upper, Type)
 write_csv(forecast_export, file.path(dataset_dir, "demand_forecast.csv"), na = "")
