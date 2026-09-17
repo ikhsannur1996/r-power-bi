@@ -16,7 +16,7 @@
 | Komponen | Keterangan |
 | --- | --- |
 | **Nama proyek** | R Basics untuk Demand & Capacity |
-| **Topik materi** | Basic R, Data Manipulation, Data Visualization |
+| **Topik materi** | Basic R, Data Manipulation (dplyr, tidyr, joins, lubridate, stringr, scales), Validasi Data, dan Data Visualization |
 | **Bahasa** | R, RStudio Desktop |
 | **Package utama** | `tidyverse`, `lubridate`, `scales` |
 | **Prerequisit** | Tidak diperlukan pengalaman sebelumnya (pemula mutlak) |
@@ -37,10 +37,16 @@ Data Manipulation
   -> Memahami struktur data
   -> dplyr: select, filter, mutate, arrange, group_by, summarise
   -> Pipeline dan cleaning lengkap
+  -> tidyr: pivot_longer & pivot_wider
+  -> Joins: left_join, inner_join, anti_join
+  -> lubridate: tanggal, bulan, periode
+  -> stringr & scales: label dan format angka
+  -> Validasi kualitas data (audit sebelum analisis)
 
 Data Visualization
   -> Konsep layer ggplot2
   -> Bar, line, scatter, boxplot
+  -> Heatmap, stacked bar, combo bar + line
   -> Multi-variabel & formatting
   -> Menyimpan grafik
 ```
@@ -56,8 +62,11 @@ Setelah menyelesaikan **R Basics**, Anda diharapkan mampu:
 3. Menggunakan operator, fungsi, dan logika dasar R.
 4. Membuat data latihan dengan kode R (generate) dan memahami struktur data.
 5. Melakukan cleaning dan transformasi data dengan `dplyr`.
-6. Membuat grafik dasar hingga multi-variabel dengan `ggplot2`.
-7. Menyimpan hasil analisis (data bersih, ringkasan, dan grafik) untuk proyek lanjutan.
+6. Mengubah bentuk data dengan `tidyr` dan menggabungkan tabel dengan join.
+7. Mengolah tanggal dengan `lubridate`, teks dengan `stringr`, dan format angka dengan `scales`.
+8. Memeriksa kualitas data (validasi) sebelum menarik kesimpulan.
+9. Membuat grafik dasar hingga multi-variabel dengan `ggplot2`.
+10. Menyimpan hasil analisis (data bersih, ringkasan, dan grafik) untuk proyek lanjutan.
 
 > Gunakan panduan ini sebagai referensi dasar sebelum menjalankan kode pada [README project](README.md).
 
@@ -96,6 +105,18 @@ library(scales)    # percentages and number labels
 ```
 
 > Jika muncul pesan `there is no package called ...`, lakukan `install.packages()` terlebih dahulu.
+
+**Package yang sudah termasuk di dalam `tidyverse`** (tidak perlu instalasi terpisah):
+
+| Package | Dipakai untuk | Chapter |
+| --- | --- | --- |
+| `dplyr` | select, filter, mutate, group_by, summarise, join | 7 dan 9 |
+| `tidyr` | `pivot_longer()`, `pivot_wider()`, penanganan `NA` | 8 |
+| `stringr` | pengolahan teks dan label | 11 |
+| `ggplot2` | visualisasi | 14 |
+| `readr` | membaca file CSV/TSV | 6 (opsional) |
+
+> Cukup `library(tidyverse)` untuk mengaktifkan semuanya sekaligus, atau panggil per package (`library(dplyr)`) agar jelas apa yang dipakai pada satu blok kode.
 
 ### 3.3 Working directory (folder kerja)
 
@@ -429,7 +450,7 @@ Catatan penting:
 
 - `InspectionDate` sudah bertipe `Date` sejak dibuat — tidak perlu konversi.
 - Data generator tidak mengandung `NA`; latihan menangani `NA` pada bab 7 tetap berguna untuk data nyata.
-- **Seluruh chart pada bab 8 dirender dari data generator ini** (`set.seed(2026)`), jadi hasil Anda akan persis sama dengan gambar yang ditampilkan.
+- **Seluruh chart pada bab 14 dirender dari data generator ini** (`set.seed(2026)`), jadi hasil Anda akan persis sama dengan gambar yang ditampilkan.
 
 > Pada pekerjaan nyata data biasanya berasal dari file. Jika tersedia `quality_inspection.csv`, cukup ganti generator di atas dengan:
 >
@@ -755,9 +776,456 @@ Jika seluruh `any()` bernilai `FALSE`, data sudah valid.
 
 ---
 
-## 8. Data Visualization dengan `ggplot2`
+## 8. Reshaping Data dengan `tidyr`
 
-### 8.1 Struktur dasar (layer)
+`tidyr` adalah bagian dari `tidyverse` (tidak perlu instalasi terpisah). Fungsinya mengubah **bentuk** tabel tanpa mengubah isinya — keterampilan penting sebelum data dipakai untuk agregasi atau visualisasi.
+
+| Bentuk | Ciri | Kapan dipakai |
+| --- | --- | --- |
+| Wide (lebar) | satu baris berisi banyak kolom pengukuran | laporan siap dibaca manusia |
+| Long (panjang) | satu baris = satu pengamatan | agregasi, visualisasi, pemodelan |
+
+### 8.1 `pivot_longer()` — lebar ke panjang
+
+Contoh: hasil inspeksi harian yang mencatat dua jenis pengukuran dalam kolom terpisah.
+
+```r
+library(dplyr)
+library(tidyr)
+
+daily_wide <- quality_clean |>
+  group_by(InspectionDate) |>
+  summarise(
+    Inspected = sum(Inspected),
+    Defect = sum(Defect),
+    .groups = "drop"
+  )
+
+daily_long <- daily_wide |>
+  pivot_longer(
+    cols = c(Inspected, Defect),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+
+head(daily_long)
+```
+
+Dua kolom pengukuran menjadi satu kolom `Metric` + satu kolom `Value`, sehingga jumlah baris menjadi dua kali lipat.
+
+### 8.2 `pivot_wider()` — panjang ke lebar
+
+Kebalikannya: dari data panjang menjadi matriks ringkas per kategori.
+
+```r
+library(dplyr)
+library(tidyr)
+
+defect_wide <- quality_clean |>
+  count(Line, DefectType) |>
+  pivot_wider(
+    names_from = DefectType,
+    values_from = n,
+    values_fill = 0
+  )
+
+defect_wide
+```
+
+`values_fill = 0` penting: kombinasi kategori yang tidak muncul diisi `0`, bukan `NA`.
+
+### 8.3 Menangani `NA` setelah reshaping
+
+```r
+library(dplyr)
+library(tidyr)
+
+quality |>
+  drop_na(Defect, Inspected) |>
+  replace_na(list(DefectType = "NONE")) |>
+  mutate(Defect = coalesce(Defect, 0)) |>
+  nrow()
+```
+
+| Fungsi | Kegunaan |
+| --- | --- |
+| `drop_na()` | membuang baris yang memiliki `NA` |
+| `replace_na()` | mengisi `NA` dengan nilai tertentu |
+| `coalesce()` | mengambil nilai pertama yang tidak `NA` dari beberapa kolom |
+
+> Data generator di section 6.1 sengaja dibuat tanpa `NA`, sehingga `drop_na()` tidak mengubah jumlah baris. Contoh ini berguna untuk data nyata.
+
+### 8.4 Ringkasan `tidyr`
+
+1. Tentukan dulu bentuk akhir yang dibutuhkan analisis.
+2. `pivot_longer()` untuk menyatukan banyak kolom pengukuran.
+3. `pivot_wider()` untuk membuat tabel ringkas per kategori.
+4. Selalu tentukan `values_fill` saat reshape ke bentuk lebar.
+5. Simpan hasil dengan `write.csv()` bila akan dipakai ulang.
+
+---
+
+## 9. Menggabungkan Data (Joins)
+
+Data nyata biasanya terpecah ke beberapa tabel (transaksi, master produk, target). Join menyatukannya kembali berdasarkan kolom kunci (key).
+
+### 9.1 Konsep join
+
+| Jenis | Baris yang dipertahankan |
+| --- | --- |
+| `left_join()` | semua baris tabel kiri |
+| `inner_join()` | hanya baris yang cocok di kedua tabel |
+| `full_join()` | semua baris dari kedua tabel |
+| `anti_join()` | baris tabel kiri yang **tidak** punya pasangan |
+
+### 9.2 `left_join()` — menambah atribut
+
+Contoh: menambahkan target defect rate per lini.
+
+```r
+library(dplyr)
+
+line_target <- tibble(
+  Line = c("A", "B", "C"),
+  TargetDefectRate = c(0.04, 0.05, 0.03)
+)
+
+summary_with_target <- summary_by_line |>
+  left_join(line_target, by = "Line") |>
+  mutate(OnTarget = DefectRate <= TargetDefectRate)
+
+summary_with_target
+```
+
+### 9.3 `inner_join()` untuk menyaring, `full_join()` untuk menemukan gap
+
+```r
+library(dplyr)
+
+# hanya lini yang punya target
+summary_by_line |> inner_join(line_target, by = "Line")
+
+# semua lini; target yang tidak terpakai tetap muncul
+summary_by_line |> full_join(line_target, by = "Line")
+```
+
+### 9.4 `anti_join()` — audit kualitas relasi
+
+`anti_join()` menjawab pertanyaan: "data mana yang tidak punya pasangan?"
+
+```r
+library(dplyr)
+
+# lini pada data yang tidak ada di tabel target
+summary_by_line |>
+  anti_join(line_target, by = "Line") |>
+  distinct(Line)
+
+# target yang tidak terpakai
+line_target |>
+  anti_join(summary_by_line, by = "Line") |>
+  distinct(Line)
+```
+
+Jika hasilnya `0 baris`, key sudah lengkap di kedua sisi.
+
+### 9.5 Bandingkan dengan `merge()` base R
+
+```r
+merge(summary_by_line, line_target, by = "Line", all.x = TRUE)   # = left_join
+merge(summary_by_line, line_target, by = "Line", all = TRUE)     # = full_join
+```
+
+`merge()` masih valid, tetapi `dplyr` lebih mudah dibaca dalam pipeline dan tidak mengubah urutan baris secara tak terduga.
+
+> Pola inilah yang dipakai pada pipeline project: tabel agregasi demand digabung dengan tabel skenario What-If.
+
+---
+
+## 10. Tanggal dan Waktu dengan `lubridate`
+
+Hampir semua analisis demand berbasis waktu, sehingga penanganan tanggal harus konsisten. `lubridate` menyediakan fungsi yang lebih aman dibanding manipulasi teks tanggal.
+
+### 10.1 Membaca tanggal (parsing)
+
+```r
+library(lubridate)
+
+ymd("2026-07-15")        # tahun-bulan-hari
+dmy("15/07/2026")        # hari-bulan-tahun
+mdy("07-15-2026")        # bulan-hari-tahun
+
+as.Date("2026-07-15")
+```
+
+Gunakan fungsi `*ymd()` sesuai urutan komponen tanggal pada sumber data.
+
+### 10.2 Mengambil komponen tanggal
+
+```r
+library(lubridate)
+
+tanggal <- as.Date("2026-07-15")
+
+year(tanggal)                 # 2026
+month(tanggal)                # 7
+month(tanggal, label = TRUE)  # Jul
+quarter(tanggal)              # 3
+wday(tanggal, label = TRUE)   # Rab
+```
+
+### 10.3 Aritmetika bulan dan pembulatan periode
+
+```r
+library(lubridate)
+
+tanggal <- as.Date("2026-07-15")
+
+tanggal %m+% months(1)                     # 2026-08-15
+floor_date(tanggal, unit = "month")        # 2026-07-01
+ceiling_date(tanggal, unit = "month") - 1  # hari terakhir bulan
+```
+
+> Gunakan `%m+%` untuk menambah bulan. Operator `+ months(1)` dapat menghasilkan tanggal tidak valid (misal 31 Februari menjadi `NA`).
+
+### 10.4 Membuat label bulan yang bisa diurutkan
+
+```r
+library(lubridate)
+
+# label singkat (Jan, Feb, ...)
+month(quality_clean$InspectionDate, label = TRUE, abbr = TRUE)
+
+# label aman untuk sumbu: YYYY-MM
+sprintf(
+  "%04d-%02d",
+  year(quality_clean$InspectionDate),
+  month(quality_clean$InspectionDate)
+)[1:5]
+```
+
+> Hindari memakai nama bulan saja (`Jul`) sebagai sumbu tanpa tahun: urutan Januari–Desember dapat tercampur antar tahun. Gunakan `YYYY-MM` atau simpan tanggal penuh.
+
+### 10.5 Pola harian → bulanan
+
+```r
+library(dplyr)
+library(lubridate)
+
+monthly <- quality_clean |>
+  mutate(Month = floor_date(InspectionDate, unit = "month")) |>
+  group_by(Month) |>
+  summarise(
+    TotalInspected = sum(Inspected),
+    TotalDefect = sum(Defect),
+    DefectRate = TotalDefect / TotalInspected,
+    .groups = "drop"
+  ) |>
+  arrange(Month)
+
+monthly
+```
+
+Pola ini sama dengan agregasi demand pada [README project](README.md): siapkan kolom tanggal bulanan, lalu `group_by()` + `summarise()`.
+
+---
+
+## 11. String dan Label dengan `stringr`
+
+`stringr` (bagian `tidyverse`) membuat pengolahan teks lebih konsisten: semua fungsi diawali `str_`, sehingga mudah diingat dan diprediksi.
+
+### 11.1 Inspeksi dan transformasi teks
+
+```r
+library(stringr)
+
+teks <- c("Line A", "line b ", "LINE C", "Line  D")
+
+str_to_upper(teks)          # LINE A, LINE B, LINE C, LINE D
+str_to_lower(teks)
+str_to_title(teks)          # Line A, Line B, Line C, Line D
+str_trim(teks)              # hapus spasi di ujung
+str_squish(teks)            # rapikan spasi berlebih
+```
+
+### 11.2 Mencari, mengambil, dan mengganti
+
+```r
+library(stringr)
+
+str_detect(teks, "LINE")           # TRUE/FALSE
+str_starts(teks, "Line")
+str_replace(teks, "Line", "Lini")  # ganti kemunculan pertama
+str_sub(teks, 1, 4)                # ambil 4 karakter pertama
+```
+
+| Fungsi | Kegunaan |
+| --- | --- |
+| `str_detect()` | memfilter baris berdasarkan pola |
+| `str_replace()` / `str_replace_all()` | menyeragamkan label kategori |
+| `str_extract()` | mengambil bagian teks sesuai pola |
+| `str_split()` | memecah teks menjadi beberapa bagian |
+
+### 11.3 Menyusun label gabungan
+
+```r
+library(dplyr)
+library(stringr)
+
+quality_clean |>
+  mutate(
+    LineLabel = str_squish(paste("Lini", Line)),
+    ProductLabel = paste0(Product, " - ", Line)
+  ) |>
+  select(Line, Product, LineLabel, ProductLabel) |>
+  head(5)
+```
+
+`sprintf()` untuk menyisipkan angka berformat ke dalam label:
+
+```r
+sprintf(
+  "%s: %.1f%% defect rate",
+  summary_by_line$Line,
+  summary_by_line$DefectRate * 100
+)
+```
+
+> `paste0()` merekatkan tanpa pemisah, `paste()` memakai spasi sebagai pemisah default, dan `sprintf()` paling tepat saat angka harus berformat tertentu.
+
+### 11.4 Ringkasan `stringr`
+
+1. Gunakan `str_trim()` / `str_squish()` sebelum membandingkan kategori.
+2. Gunakan `str_to_upper()` / `str_to_title()` agar kategori konsisten.
+3. Gunakan `str_detect()` untuk filter berbasis pola, bukan `==` pada teks panjang.
+4. Gunakan `paste()` / `paste0()` / `sprintf()` untuk label yang dibaca manusia.
+
+---
+
+## 12. Memformat Angka dengan `scales`
+
+Angka mentah sulit dibaca di laporan (`0.0432`, `1250000`). Package `scales` mengubahnya menjadi format siap presentasi, dan langsung terhubung ke sumbu `ggplot2`.
+
+### 12.1 Fungsi format utama
+
+```r
+library(scales)
+
+percent(0.0432)                   # "4.32%"
+percent(0.0432, accuracy = 0.1)   # "4.3%"
+comma(1250000)                    # "1,250,000"
+number(1250000, big.mark = ".", decimal.mark = ",")   # "1.250.000"
+dollar(1250000)                   # "$1,250,000"
+unit_format(unit = "k", scale = 1e-3)(1250000)
+```
+
+### 12.2 Menerapkan pada sumbu `ggplot2`
+
+```r
+library(ggplot2)
+library(scales)
+
+ggplot(summary_by_line, aes(x = Line, y = DefectRate)) +
+  geom_col(fill = "steelblue") +
+  scale_y_continuous(labels = percent_format(accuracy = 0.1)) +
+  labs(title = "Defect rate per lini", x = "Lini", y = "Defect rate")
+```
+
+Varian label sumbu yang paling sering dipakai:
+
+| Kebutuhan sumbu | Fungsi label |
+| --- | --- |
+| persentase | `percent_format(accuracy = 0.1)` |
+| ribuan | `comma_format()` |
+| satuan (k, juta) | `unit_format(unit = "k", scale = 1e-3)` |
+| mata uang | `dollar_format()` |
+
+### 12.3 Format di dalam kolom teks
+
+```r
+library(dplyr)
+library(scales)
+
+summary_by_line |>
+  mutate(Label = percent(DefectRate, accuracy = 0.01)) |>
+  select(Line, DefectRate, Label)
+```
+
+> Pilih satu format dan pakai konsisten di seluruh dashboard. Persentase satu angka desimal biasanya lebih jelas dibaca daripada empat angka desimal.
+
+---
+
+## 13. Validasi Data (Data Quality Checks)
+
+Sebelum angka dipakai untuk keputusan, pastikan datanya sehat. Bab ini berisi pemeriksaan cepat yang selalu dijalankan seorang analyst.
+
+### 13.1 Cek ukuran dan kelengkapan
+
+```r
+library(dplyr)
+
+nrow(quality)                 # jumlah baris
+ncol(quality)                 # jumlah kolom
+colSums(is.na(quality))       # jumlah NA per kolom
+sum(is.na(quality$Defect))    # NA pada kolom kunci
+```
+
+### 13.2 Cek duplikat
+
+```r
+library(dplyr)
+
+quality |>
+  count(InspectionDate, Line, Shift) |>
+  filter(n > 1)          # kombinasi kunci yang muncul lebih dari sekali
+
+quality |> duplicated() |> sum()
+```
+
+### 13.3 Cek keseimbangan kelompok
+
+```r
+library(dplyr)
+
+quality |> count(Line)          # apakah jumlah baris per lini seimbang?
+quality |> count(Shift)
+quality |> count(Line, Shift)
+```
+
+Jumlah yang tidak seimbang bukan selalu error, tetapi harus punya penjelasan.
+
+### 13.4 Cek konsistensi nilai dan kunci
+
+```r
+library(dplyr)
+
+summary(quality_clean$DefectRate)                      # rentang wajar?
+
+quality_clean |> filter(Defect > Inspected) |> nrow()  # harus 0
+quality_clean |> filter(Inspected <= 0) |> nrow()      # harus 0
+
+# kesamaan kunci antar tabel
+setequal(unique(summary_by_line$Line), unique(line_target$Line))
+```
+
+### 13.5 Checklist audit singkat
+
+| Pemeriksaan | Fungsi | Hasil yang diharapkan |
+| --- | --- | --- |
+| jumlah baris | `nrow()` | sesuai ekspektasi periode x kategori |
+| NA | `colSums(is.na())` | 0 pada kolom kunci |
+| duplikat | `count()` + `filter(n > 1)` | 0 baris |
+| keseimbangan grup | `count()` | seimbang atau dapat dijelaskan |
+| rentang nilai | `summary()` / `filter()` | tidak ada nilai mustahil |
+| kunci relasi | `setequal()` / `anti_join()` | 0 baris tanpa pasangan |
+
+> Jalankan pemeriksaan ini setiap kali data baru masuk, bukan hanya di awal project.
+
+---
+
+## 14. Data Visualization dengan `ggplot2`
+
+### 14.1 Struktur dasar (layer)
 
 `ggplot2` membangun grafik dengan menambahkan lapisan (layer) menggunakan `+`:
 
@@ -778,7 +1246,7 @@ Anatomi:
 - `aes()` → hubungan kolom dengan sumbu (`x`, `y`), warna, bentuk;
 - `geom_*()` → bentuk visual (bar, titik, garis, kotak).
 
-### 8.2 Bar chart (defect rate per lini)
+### 14.2 Bar chart (defect rate per lini)
 
 ```r
 ggplot(summary_by_line, aes(x = Line, y = DefectRate)) +
@@ -803,7 +1271,7 @@ Hasil chart:
 
 ![Bar chart dengan format persentase](images/basicr/02_bar_percent.png)
 
-### 8.3 Line chart (tren per tanggal)
+### 14.3 Line chart (tren per tanggal)
 
 ```r
 trend_by_date <- quality_clean |>
@@ -826,7 +1294,7 @@ Hasil chart:
 
 ![Line chart tren defect rate](images/basicr/03_line_trend.png)
 
-### 8.4 Scatter plot (hubungan dua variabel numerik)
+### 14.4 Scatter plot (hubungan dua variabel numerik)
 
 ```r
 ggplot(quality_clean, aes(x = CycleTimeSec, y = DefectRate, color = Line)) +
@@ -855,7 +1323,7 @@ Hasil chart:
 
 ![Scatter plot dengan garis kecenderungan](images/basicr/05_scatter_smooth.png)
 
-### 8.5 Boxplot (sebaran per kelompok)
+### 14.5 Boxplot (sebaran per kelompok)
 
 ```r
 ggplot(quality_clean, aes(x = Line, y = CycleTimeSec, fill = Line)) +
@@ -879,7 +1347,7 @@ Hasil chart:
 - titik di luar whisker = kandidat **outlier**;
 - kotak yang lebih tinggi = variasi lebih besar.
 
-### 8.6 Grafik multi-variabel & formatting
+### 14.6 Grafik multi-variabel & formatting
 
 **Grafik multi-variabel** menyampaikan lebih dari dua dimensi data. Kuncinya: petakan setiap variabel ke satu estetika visual (warna, ukuran, bentuk).
 
@@ -920,7 +1388,160 @@ Hasil chart:
 
 ![Facet multi-panel per lini](images/basicr/08_facet.png)
 
-### 8.7 Labels, theme, dan simpan grafik
+### 14.7 Heatmap (`geom_tile()`)
+
+Heatmap menampilkan nilai pada kombinasi dua kategori (misal tanggal x lini) menggunakan intensitas warna:
+
+```r
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+heat_data <- quality_clean |>
+  group_by(InspectionDate, Line) |>
+  summarise(
+    DefectRate = sum(Defect) / sum(Inspected),
+    .groups = "drop"
+  )
+
+ggplot(heat_data, aes(x = InspectionDate, y = Line, fill = DefectRate)) +
+  geom_tile(color = "white", linewidth = 0.8) +
+  scale_fill_gradient(
+    low = "#16B8A6",
+    high = "#F26B5E",
+    labels = percent_format(accuracy = 1)
+  ) +
+  labs(
+    title = "Heatmap defect rate per lini",
+    subtitle = "Warna lebih merah = defect rate lebih tinggi",
+    x = "Tanggal inspeksi",
+    y = "Lini",
+    fill = "Defect rate"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid = element_blank())
+```
+
+Hasil chart:
+
+![Heatmap defect rate per lini](images/basicr/09_heatmap.png)
+
+Cara membaca:
+
+- satu kotak = satu kombinasi tanggal dan lini;
+- `panel.grid = element_blank()` menghapus grid agar warna terbaca jelas;
+- `scale_fill_gradient()` mengatur dua warna ujung (rendah → tinggi);
+- tambahkan `geom_text()` bila nilai ingin ditulis di dalam kotak.
+
+### 14.8 Stacked bar (komposisi)
+
+Stacked bar menunjukkan komposisi kategori di dalam setiap kelompok:
+
+```r
+library(dplyr)
+library(ggplot2)
+
+defect_mix <- quality_clean |>
+  filter(Defect > 0) |>
+  count(Line, DefectType)
+
+ggplot(defect_mix, aes(x = Line, y = n, fill = DefectType)) +
+  geom_col(width = 0.72) +
+  scale_fill_manual(
+    values = c(
+      "SCRATCH" = "#2E7CF6",
+      "DENT" = "#8B5CF6",
+      "CRACK" = "#F26B5E"
+    )
+  ) +
+  labs(
+    title = "Komposisi jenis defect per lini",
+    subtitle = "Hanya baris dengan defect > 0",
+    x = "Lini",
+    y = "Jumlah kasus",
+    fill = "Jenis defect"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom")
+```
+
+Hasil chart:
+
+![Stacked bar komposisi jenis defect](images/basicr/10_stacked_bar.png)
+
+Variasi bobot proporsional (setiap tumpukan 100%):
+
+```r
+library(ggplot2)
+library(scales)
+
+ggplot(defect_mix, aes(x = Line, y = n, fill = DefectType)) +
+  geom_col(position = "fill", width = 0.72) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(title = "Proporsi jenis defect per lini", y = "Proporsi")
+```
+
+`position = "fill"` membuat proporsi antar lini mudah dibandingkan, sementara `position = "dodge"` memisahkan setiap batang untuk perbandingan nilai absolut.
+
+### 14.9 Combo chart bar + line (dua sumbu)
+
+Combo chart memadukan volume (bar) dengan rasio (garis). Karena satuannya berbeda, gunakan `sec_axis()`:
+
+```r
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+daily <- quality_clean |>
+  group_by(InspectionDate) |>
+  summarise(
+    TotalDefect = sum(Defect),
+    DefectRate = sum(Defect) / sum(Inspected),
+    .groups = "drop"
+  )
+
+scale_factor <- max(daily$TotalDefect) / max(daily$DefectRate)
+
+ggplot(daily, aes(x = InspectionDate)) +
+  geom_col(aes(y = TotalDefect), fill = "#253B6E", alpha = 0.85, width = 0.6) +
+  geom_line(
+    aes(y = DefectRate * scale_factor, color = "Defect rate"),
+    linewidth = 1.1
+  ) +
+  geom_point(
+    aes(y = DefectRate * scale_factor, color = "Defect rate"),
+    size = 2.5
+  ) +
+  scale_y_continuous(
+    name = "Total defect (unit)",
+    sec.axis = sec_axis(
+      ~ . / scale_factor,
+      name = "Defect rate",
+      labels = percent_format(accuracy = 0.1)
+    )
+  ) +
+  scale_color_manual(values = c("Defect rate" = "#F26B5E")) +
+  labs(
+    title = "Total defect dan defect rate harian",
+    subtitle = "Bar = jumlah unit cacat, garis = defect rate (sumbu kanan)",
+    x = "Tanggal inspeksi",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom")
+```
+
+Hasil chart:
+
+![Combo chart total defect dan defect rate](images/basicr/11_combo_barline.png)
+
+Catatan penting:
+
+- `sec.axis` hanya menampilkan skala kedua, bukan menambah data baru;
+- nilai garis dikalikan `scale_factor` agar sejajar dengan bar, lalu dibagi kembali saat diberi label;
+- hindari dua sumbu bila kedua seri sebenarnya memakai satuan yang sama — satu sumbu sudah cukup.
+
+### 14.10 Labels, theme, dan simpan grafik
 
 ```r
 labs(
@@ -955,7 +1576,7 @@ ggsave(
 )
 ```
 
-### 8.8 Prinsip visualisasi yang efektif
+### 14.11 Prinsip visualisasi yang efektif
 
 | # | Prinsip | Cara |
 | --- | --- | --- |
@@ -970,7 +1591,7 @@ ggsave(
 
 ---
 
-## 9. Contoh Alur Lengkap (Basic R + Manipulasi + Visualisasi)
+## 15. Contoh Alur Lengkap (Basic R + Manipulasi + Visualisasi)
 
 ```r
 library(dplyr)
@@ -1025,7 +1646,7 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 
 ---
 
-## 10. Export Hasil Analisis
+## 16. Export Hasil Analisis
 
 | Data/Luaran | Fungsi |
 | --- | --- |
@@ -1035,7 +1656,7 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 
 ---
 
-## 11. Kesalahan Umum dan Solusinya
+## 17. Kesalahan Umum dan Solusinya
 
 | Kesalahan | Solusi |
 | --- | --- |
@@ -1051,7 +1672,7 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 
 ---
 
-## 12. Latihan Mandiri
+## 18. Latihan Mandiri
 
 ### Level 1 — Basic R
 
@@ -1074,9 +1695,18 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 12. Buat scatter plot cycle time vs defect rate + garis regresi.
 13. Tambahkan judul, label sumbu, format persentase, simpan PNG.
 
+### Level 4 — Reshaping, Joins, dan Validasi
+
+14. Ubah `summary_by_line` menjadi bentuk panjang dengan `pivot_longer()`.
+15. Buat tabel ringkas jumlah `DefectType` per lini dengan `pivot_wider()` dan `values_fill = 0`.
+16. Tambahkan target per lini dengan `left_join()`, lalu tandai `OnTarget` menggunakan `mutate()`.
+17. Temukan lini yang tidak memiliki target menggunakan `anti_join()`.
+18. Hitung defect rate bulanan dengan `floor_date()` + `group_by()` + `summarise()`.
+19. Jalankan checklist validasi bab 13 pada data Anda dan tuliskan temuannya.
+
 ---
 
-## 13. Checklist Penyelesaian R Basics
+## 19. Checklist Penyelesaian R Basics
 
 - [ ] R dan RStudio terpasang.
 - [ ] Package `tidyverse`, `lubridate`, dan `scales` terpasang.
@@ -1085,27 +1715,30 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 - [ ] Data invalid difilter.
 - [ ] Kolom `DefectRate` dibuat.
 - [ ] Ringkasan per kelompok dibuat (group_by + summarise).
+- [ ] Data diubah bentuk dengan `pivot_longer()` / `pivot_wider()`.
+- [ ] Tabel digabungkan dengan `left_join()` dan relasi diaudit dengan `anti_join()`.
+- [ ] Kolom tanggal diolah dengan `floor_date()` / `month()`.
+- [ ] Label dan angka diformat dengan `stringr` dan `scales`.
+- [ ] Checklist validasi data (bab 13) dijalankan tanpa temuan kritis.
 - [ ] Minimal 4 jenis grafik dibuat.
 - [ ] Minimal 1 grafik multi-variabel dibuat.
+- [ ] Minimal 1 heatmap atau stacked bar dibuat.
 - [ ] Data bersih dan grafik diekspor ke file.
 
 ---
 
-## 14. Keterkaitan dengan Volume Lain
+## 20. Keterkaitan dengan Volume Lain
 
 | Volume | Fokus | Prasyarat dari R Basics |
 | --- | --- | --- |
 | **R Basics (ini)** | Basic R · Data Manipulation · Visualisasi | — |
 | Main project | [README project](README.md) |
 
-
 ---
 
----
+## 21. Tips & Trik R Basics
 
-## 15. Tips & Trik R Basics
-
-### 15.1 Kebiasaan kerja yang membuat belajar R cepat
+### 21.1 Kebiasaan kerja yang membuat belajar R cepat
 
 1. **Mulai kecil**: jalankan satu baris → baca hasil → lanjut. Jangan jalankan seluruh skrip sebelum memahami tiap blok.
 2. **Gunakan project RStudio**: `File > New Project` di folder materi. Semua path menjadi relatif dan aman.
@@ -1115,7 +1748,7 @@ ggsave("defect_rate_by_line.png", width = 8, height = 5, dpi = 300)
 6. **Ulangi skrip dari atas** bila ragu; environment bisa "basi" karena objek lama tertinggal.
 7. **Rapi dan konsisten**: satu operasi per baris pipa, nama kolom penggaris bawah `_`.
 
-### 15.2 Pola sintaks yang paling sering dipakai
+### 21.2 Pola sintaks yang paling sering dipakai
 
 ```r
 # Pola 1: data latihan -> bersihkan -> metrik
@@ -1142,7 +1775,7 @@ ggplot(ringkasan, aes(x = Line, y = defect_rate)) +
   scale_y_continuous(labels = percent_format())
 ```
 
-### 15.3 "Cheat mental" menghafal fungsi
+### 21.3 "Cheat mental" menghafal fungsi
 
 | Jika ingin... | Ingat... |
 | --- | --- |
@@ -1158,7 +1791,7 @@ ggplot(ringkasan, aes(x = Line, y = defect_rate)) +
 
 > Trik ingatan: **S–F–M–A–G** = `select` → `filter` → `mutate` → `arrange` → `group/summarise`.
 
-### 15.4 Tips teknis RStudio
+### 21.4 Tips teknis RStudio
 
 - `Cmd/Ctrl + Shift + M` untuk mengetik pipe (`%>%` atau `|>`).
 - `Alt + -` (Option + minus) untuk `<-`.
@@ -1169,10 +1802,9 @@ ggplot(ringkasan, aes(x = Line, y = defect_rate)) +
 
 ---
 
-## 16. Bank Latihan Tambahan (Exercise Bank) — R Basics
+## 22. Bank Latihan Tambahan (Exercise Bank) — R Basics
 
-
-### 16.1 Soal Essai / Latihan Terbuka
+### 22.1 Soal Essai / Latihan Terbuka
 
 **A. Basic R**
 1. Buat objek `total_inspected <- 5000` dan `total_defect <- 320`. Hitung `defect_rate`.
@@ -1193,7 +1825,7 @@ ggplot(ringkasan, aes(x = Line, y = defect_rate)) +
 13. Buat boxplot `CycleTimeSec` per `Line`.
 14. Tambahkan `facet_wrap(~ Line)` pada line chart, lalu simpan PNG dengan `ggsave()`.
 
-### 16.2 Kunci jawaban singkat
+### 22.2 Kunci jawaban singkat
 
 ```r
 # 1
@@ -1229,14 +1861,87 @@ quality |> count(DefectType, sort = TRUE)
 # 9  (contoh, harga_inspeksi = data tambahan dengan kolom Line & Biaya)
 ringkasan |> left_join(harga_produk, by = "Line")
 
-# 10-14 (lihat Bab 8; pakai ringkasan/topik dari README)
+# 10-14 (lihat Bab 14; pakai ringkasan/topik dari README)
 ```
 
 > Catatan: nomor 4 gunakan `case_when()` bila perlu multi-kondisi. Untuk soal 7, defect rate agregat sebaiknya `sum(Defect)/sum(Inspected)`.
 
 ---
 
-## 17. Referensi dan Berkas
+## 23. Glossary Fungsi R
+
+Tabel ringkas fungsi yang dibahas di dokumen ini, diurutkan per chapter untuk memudahkan pencarian.
+
+| Chapter | Fungsi | Kegunaan |
+| --- | --- | --- |
+| 4 | `<-` | assignment objek |
+| 4 | `c()`, `seq()`, `rep()` | membuat dan mengulang vektor |
+| 4 | `class()`, `as.numeric()`, `as.Date()` | memeriksa dan mengubah tipe data |
+| 4 | `is.na()` | mendeteksi missing value |
+| 5 | `mean()`, `sum()`, `min()`, `max()`, `sd()` | statistik deskriptif |
+| 5 | `ifelse()`, `case_when()` | logika bercabang |
+| 5 | `function()` | membuat fungsi sendiri |
+| 6 | `tibble()`, `set.seed()`, `rnorm()`, `rpois()` | membuat data latihan reproducible |
+| 6 | `str()`, `head()`, `glimpse()`, `summary()`, `nrow()` | inspeksi struktur data |
+| 7 | `select()`, `filter()`, `mutate()`, `arrange()`, `rename()` | manipulasi kolom dan baris |
+| 7 | `distinct()`, `count()` | nilai unik dan hitungan kategori |
+| 7 | `group_by()`, `summarise()` | ringkasan per kelompok |
+| 7 | `\|>` | pipe antar langkah |
+| 7 | `trimws()`, `toupper()` | merapikan teks sebelum analisis |
+| 8 | `pivot_longer()`, `pivot_wider()` | mengubah bentuk tabel |
+| 8 | `drop_na()`, `replace_na()`, `coalesce()` | menangani nilai `NA` |
+| 9 | `left_join()`, `inner_join()`, `full_join()`, `anti_join()` | menggabungkan dan mengaudit relasi tabel |
+| 10 | `ymd()`, `dmy()`, `mdy()` | membaca tanggal |
+| 10 | `floor_date()`, `ceiling_date()`, `%m+%` | pembulatan dan aritmetika bulan |
+| 10 | `year()`, `month()`, `quarter()`, `wday()` | komponen tanggal |
+| 11 | `str_detect()`, `str_replace()`, `str_to_title()`, `str_squish()` | pengolahan teks |
+| 11 | `paste()`, `paste0()`, `sprintf()` | menyusun label gabungan |
+| 12 | `percent()`, `comma()`, `number()`, `dollar()` | format angka untuk laporan |
+| 12 | `percent_format()`, `comma_format()`, `unit_format()` | label sumbu `ggplot2` |
+| 13 | `setequal()`, `duplicated()`, `colSums(is.na())` | validasi kualitas data |
+| 14 | `ggplot()`, `aes()`, `geom_*()`, `facet_wrap()` | membangun grafik |
+| 14 | `labs()`, `theme_minimal()`, `ggsave()` | label, tema, dan simpan grafik |
+| 16 | `write.csv()` | mengekspor hasil analisis |
+
+> Setiap fungsi di atas dibahas lengkap pada chapter yang tertulis. Gunakan tabel ini sebagai rujukan cepat saat menulis kode.
+
+---
+
+## 24. Topik Lanjutan (Next Steps)
+
+Setelah R Basics selesai, tiga topik berikut adalah lanjutan yang paling sering dibutuhkan analyst:
+
+| Topik | Package / Fungsi | Kapan dipakai |
+| --- | --- | --- |
+| Iterasi dan fungsi berulang | `purrr::map()`, `map_dbl()`, `map_df()` | menghitung banyak segmen atau skenario sekaligus |
+| Membaca file Excel | `readxl::read_excel()` | sumber data berupa spreadsheet, bukan CSV |
+| Laporan otomatis | R Markdown / Quarto | menyusun laporan PDF/HTML yang dapat di-render ulang |
+
+Contoh iterasi dengan `purrr`:
+
+```r
+library(purrr)
+library(dplyr)
+
+line_list <- split(quality_clean, quality_clean$Line)
+
+line_list |>
+  map_dbl(~ sum(.x$Defect) / sum(.x$Inspected))
+```
+
+Contoh membaca Excel (instal sekali dengan `install.packages("readxl")`):
+
+```r
+library(readxl)
+
+quality_xlsx <- read_excel("quality_inspection.xlsx", sheet = 1)
+```
+
+> Lanjutkan ke [README project](README.md) untuk melihat bagaimana kode yang sama dipakai pada analisis demand dan capacity di Power BI, serta [CHEATSEET.MD](CHEATSEET.MD) untuk ringkasan sintaks.
+
+---
+
+## 25. Referensi dan Berkas
 
 | Berkas/Materi | Lokasi |
 | --- | --- |
