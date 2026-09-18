@@ -114,16 +114,14 @@ Business Decision
 
 ## 2. Requirements
 
-Project ini membutuhkan komponen berikut:
+| Kebutuhan | Minimum | Terbaru / direkomendasikan |
+| --- | --- | --- |
+| R (Bahasa Pemrograman R) | R 4.1.0 | R 4.6.1 |
+| R packages | `tidyverse`, `lubridate`, `scales` | Versi terbaru dari CRAN |
+| Power BI Desktop | Windows 10/11 (64-bit) | Versi terbaru (2.157.1354.0) |
+| Hardware | RAM 2 GB, layar 1440 × 900 | RAM 8 GB, penyimpanan 5 GB, layar 1920 × 1080 |
 
-| Requirement | Keterangan |
-| --- | --- |
-| R | R 4.x atau versi yang kompatibel dengan Power BI |
-| R packages | `tidyverse`, `lubridate`, dan `scales` |
-| Power BI Desktop | Untuk menjalankan R Visual, slicer, dan dashboard |
-| R scripting di Power BI | Path R harus dikonfigurasi melalui `File → Options and settings → Options → R scripting` |
-| Dataset | File CSV pada folder `dataset/` |
-| Output visual | File PNG pada folder `output/` |
+> R (bahasa pemrograman R) dapat dijalankan di Windows, macOS, dan Linux. **Power BI Desktop hanya di Windows.**
 
 Install package R jika belum tersedia:
 
