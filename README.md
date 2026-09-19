@@ -1,6 +1,6 @@
 # Demand & Capacity What-If Analysis
 
-> **Documentation:** [R Basics](BASICR.MD) · [R Cheat Sheet](CHEATSEET.MD)
+> **Documentation:** [R Basics](BASICR.MD) · [R Cheat Sheet](CHEATSEET.MD) · [R + Power BI Guide](RPOWERBI.MD)
 
 
 End-to-end analytics project menggunakan **R + Power BI** untuk menganalisis demand, production capacity, What-If scenario, capacity risk, revenue impact, dan demand forecasting.
@@ -694,8 +694,9 @@ Gunakan referensi berikut untuk mempelajari dasar-dasar R sebelum menjalankan tr
 
 - [R Basics](BASICR.MD) — referensi sintaks dasar R, object, vector, data frame, function, dan operasi data sederhana.
 - [R Cheat Sheet](CHEATSEET.MD) — ringkasan cepat syntax dan pola umum R yang digunakan dalam project.
+- [R + Power BI Guide](RPOWERBI.MD) — panduan `dplyr` dan `ggplot2` di Power BI (R Visual dan R script di Power Query Editor).
 
-Kedua file tersebut dapat dibuka langsung dari GitHub dengan mengklik link di atas.
+Ketiga file tersebut dapat dibuka langsung dari GitHub dengan mengklik link di atas.
 
 
 ## 9. Cheat Sheet PDF References
