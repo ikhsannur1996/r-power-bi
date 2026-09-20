@@ -641,7 +641,9 @@ CapacityGap
 RevenueImpact
 ```
 
-### Page 1 — Demand & Capacity
+Rekomendasi layout dashboard dibagi menjadi dua halaman berikut:
+
+### Page 1 — Demand & Capacity (Suggested Page)
 
 ```text
 KPI
@@ -650,7 +652,7 @@ Capacity Utilization
 Scenario Slicer
 ```
 
-### Page 2 — Risk & Forecast
+### Page 2 — Risk & Forecast (Suggested Page)
 
 ```text
 Demand Distribution
@@ -659,6 +661,8 @@ SKU Capacity Risk Pareto
 Demand Forecast
 Scenario Slicer
 ```
+
+> Kedua halaman di atas adalah **rekomendasi layout**. Sample file pada [Sample Power BI File](#sample-power-bi-file) menempatkan keenam R Visual tersebut pada satu halaman (`Page 1`, *fit to page*) agar mudah dibuka sekaligus.
 
 ### Sample Power BI File
 
