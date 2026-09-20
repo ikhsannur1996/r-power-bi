@@ -660,6 +660,40 @@ Demand Forecast
 Scenario Slicer
 ```
 
+### Sample Power BI File
+
+File report siap pakai: [Download Demand & Capacity.pbix](Demand%20%26%20Capacity.pbix)
+
+![Demand & Capacity dashboard](images/powerbi/dashboard-preview.png)
+
+Sample ini berisi **satu halaman** (`Page 1`, 1920 × 1080, *fit to page*) dengan **6 R Visual** (`ggplot2`) dan **4 slicer**:
+
+| Visual | Tipe | Kolom `dataset` yang dipakai |
+| --- | --- | --- |
+| Demand Distribution | R Visual — violin + boxplot | `Produk`, `ScenarioDemand` |
+| Monthly Demand Pattern | R Visual — polar bar | `Bulan`, `ScenarioDemand` |
+| Capacity Utilization by Location | R Visual — heatmap | `Produk`, `Lokasi`, `ScenarioDemand`, `Capacity` |
+| SKU Capacity Risk Pareto | R Visual — pareto (bar + cumulative line) | `SKU`, `CapacityGap` |
+| Product Demand Ranking | R Visual — bump chart | `Tanggal`, `Produk`, `ScenarioDemand` |
+| Demand Forecast Band | R Visual — line + forecast band | `Tanggal`, `ScenarioDemand`, `Capacity` |
+| Scenario | Slicer — dropdown, single select, default `Base` | `Scenario` |
+| Kategori | Slicer | `Kategori` |
+| Ukuran | Slicer | `Ukuran` |
+| Packing | Slicer | `Packing` |
+
+Script lengkap tiap visual sama dengan contoh pada [Section 5](#5-visualization--forecasting).
+
+Cara membuka sample:
+
+1. Buka file dengan **Power BI Desktop** (Windows), karena R Visual tidak tersedia di macOS dan Linux.
+2. Install R beserta package `dplyr`, `ggplot2`, `scales`, dan `lubridate`, lalu set path R di **File → Options and settings → Options → Global → R scripting**.
+3. Jika muncul peringatan privacy, set data source menjadi **Public** di **Data source settings → Edit Permissions**.
+4. Pilih scenario pada slicer `Scenario`; visual default memakai `Base`.
+
+> Semua visual membaca table `dataset` — sumber data yang sama dengan [dataset/dataset.csv](dataset/dataset.csv) — sehingga slicer `Scenario` langsung mengontrol `ScenarioDemand`, `Utilization`, `CapacityGap`, dan `RevenueImpact`.
+
+> Preview di atas berasal dari export PDF report (**File → Export → PDF**) yang dirender menjadi PNG di [`images/powerbi/dashboard-preview.png`](images/powerbi/dashboard-preview.png).
+
 ## 7. Business Framework
 
 ```text

@@ -22,6 +22,8 @@ Power Query Editor  ->  data bersih  ->  Data model  ->  R Visual  ->  chart
 
 Data latihan: [`dataset/rpowerbi_practice.csv`](dataset/rpowerbi_practice.csv).
 
+Contoh report: [`Demand & Capacity.pbix`](Demand%20%26%20Capacity.pbix) — satu halaman berisi 6 R Visual (`ggplot2`) dan slicer `Scenario`, `Kategori`, `Ukuran`, serta `Packing`.
+
 ---
 
 ## 2. Setup
