@@ -662,9 +662,17 @@ Scenario Slicer
 
 ### Sample Power BI File
 
-File report siap pakai: [Download Demand & Capacity.pbix](Demand%20%26%20Capacity.pbix)
+File report dan hasil export yang tersedia:
 
-![Demand & Capacity dashboard](images/powerbi/dashboard-preview.png)
+| File | Isi |
+| --- | --- |
+| [Demand & Capacity.pbix](Demand%20%26%20Capacity.pbix) | Sample report Power BI Desktop — satu halaman, 6 R Visual, 4 slicer |
+| [Demand & Capacity.pdf](Demand%20%26%20Capacity.pdf) | Export PDF halaman report (`File → Export → PDF`) |
+| [Demand & Capacity.jpeg](Demand%20%26%20Capacity.jpeg) | Screenshot final dashboard |
+
+**Sample final dashboard**
+
+![Demand & Capacity final dashboard](Demand%20%26%20Capacity.jpeg)
 
 Sample ini berisi **satu halaman** (`Page 1`, 1920 × 1080, *fit to page*) dengan **6 R Visual** (`ggplot2`) dan **4 slicer**:
 
@@ -692,7 +700,7 @@ Cara membuka sample:
 
 > Semua visual membaca table `dataset` — sumber data yang sama dengan [dataset/dataset.csv](dataset/dataset.csv) — sehingga slicer `Scenario` langsung mengontrol `ScenarioDemand`, `Utilization`, `CapacityGap`, dan `RevenueImpact`.
 
-> Preview di atas berasal dari export PDF report (**File → Export → PDF**) yang dirender menjadi PNG di [`images/powerbi/dashboard-preview.png`](images/powerbi/dashboard-preview.png).
+> Screenshot di atas adalah final dashboard dengan pilihan slicer `Scenario = Base`, `Kategori`, `Ukuran`, dan `Packing` pada posisi `All`. File `.pdf` dan `.jpeg` di atas berasal dari report yang sama di Power BI Desktop (**File → Export → PDF / Export current visual**).
 
 ## 7. Business Framework
 
