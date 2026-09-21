@@ -8,6 +8,18 @@ End-to-end analytics project menggunakan **R + Power BI** untuk menganalisis dem
 > **Business Question:**  
 > **How does demand uncertainty affect production capacity and revenue?**
 
+## Disclaimer
+
+> **Data yang digunakan pada project ini adalah data simulasi (synthetic), bukan data perusahaan atau data pasar yang sebenarnya.**
+
+Seluruh angka demand, capacity, harga, utilization, revenue impact, dan forecast dihasilkan dari dataset yang dibangkitkan dengan R (`set.seed(123)`), sehingga:
+
+- Hasil analisis **kemungkinan tidak sesuai dengan kondisi dunia nyata**.
+- Angka dan insight pada project ini **bukan interpretasi bisnis** dan tidak dapat dipakai sebagai dasar keputusan produksi, kapasitas, atau investasi.
+- Fokus project ini hanya pada **integrasi antara R dan Power BI**: persiapan data dengan `dplyr`, visual `ggplot2` pada R Visual, serta kontrol slicer dan filter Power BI terhadap visual R.
+
+Untuk implementasi nyata, ganti `dataset` dengan data aktual, lalu validasi ulang asumsi, formula KPI, dan parameter scenario.
+
 ## Business Case
 
 ### Peran
@@ -141,7 +153,7 @@ Gunakan `library(tidyverse)` sebelum menjalankan kode transformation dan visuali
 
 ## 3. Data Preparation
 
-Synthetic monthly dataset untuk periode **January 2024 – December 2026**, dengan 12 SKU, 4 products, 2 locations, dan beberapa product attributes.
+Synthetic monthly dataset untuk periode **January 2024 – December 2026**, dengan 12 SKU, 4 products, 2 locations, dan beberapa product attributes. Data ini bersifat **simulasi** — lihat [Disclaimer](#disclaimer).
 
 **Dimensions**
 
